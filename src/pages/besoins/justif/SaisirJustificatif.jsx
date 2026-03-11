@@ -27,7 +27,7 @@ export default function SaisirJustificatif() {
   useEffect(() => {
     const load = async () => {
       setLoading(true)
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('besoins')
         .select(`
           *,
@@ -44,18 +44,19 @@ export default function SaisirJustificatif() {
             virements(nom)
           ),
           decaissements(id, montant_decaisse, justification_si_inferieur, created_at,
-            profiles!caissiere_id(nom, prenom)
-          ),
-          justificatifs(id, numero_facture, montant_facture, document_url, created_at,
-            profiles!agent_id(nom, prenom)
-          ),
-          retours_caisse(id, montant_retour, date_confirmation,
-            profiles!confirme_par_caissiere_id(nom, prenom)
+            profiles!caissiere_id(nom, prenom),
+            justificatifs(id, numero_facture, montant_facture, document_url, created_at,
+              profiles!agent_id(nom, prenom),
+              retours_caisse(id, montant_retour, date_confirmation,
+                profiles!confirme_par_caissiere_id(nom, prenom)
+              )
+            )
           )
         `)
         .eq('id', id)
         .single()
 
+      if (error) console.error('Erreur chargement besoin:', error)
       if (data) setBesoin(data)
       setLoading(false)
     }
@@ -65,8 +66,8 @@ export default function SaisirJustificatif() {
   const validationDFC  = besoin?.validations_dfc?.[besoin.validations_dfc.length - 1]
   const validationDG   = besoin?.validations_dg?.[0]
   const decaissement   = besoin?.decaissements?.[0]
-  const justificatif   = besoin?.justificatifs?.[0]
-  const retourCaisse   = besoin?.retours_caisse?.[0]
+  const justificatif   = decaissement?.justificatifs?.[0]
+  const retourCaisse   = justificatif?.retours_caisse?.[0]
   const employe        = besoin?.profiles
   const montantDecaisse = decaissement?.montant_decaisse ?? 0
 

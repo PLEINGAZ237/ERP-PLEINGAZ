@@ -107,8 +107,8 @@ export default function PortailDashboard() {
                 <div style={styles.dropdownHeader}>
                   <div style={styles.dropdownAvatar}>{initials || "U"}</div>
                   <div>
-                    <div style={{ color: "#fff", fontSize: "13px", fontWeight: 600 }}>{displayName}</div>
-                    <div style={{ color: "#666", fontSize: "11px" }}>{user?.email}</div>
+                    <div style={{ color: "#111", fontSize: "13px", fontWeight: 600 }}>{displayName}</div>
+                    <div style={{ color: "#999", fontSize: "11px" }}>{user?.email}</div>
                   </div>
                 </div>
                 <div style={styles.dropdownDivider} />
@@ -187,8 +187,8 @@ export default function PortailDashboard() {
                 )}
               </div>
 
-              <h3 style={{ ...styles.cardTitle, color: mod.active ? "#fff" : "#555" }}>{mod.title}</h3>
-              <p style={{ ...styles.cardDesc, color: mod.active ? "#888" : "#444" }}>{mod.desc}</p>
+              <h3 style={{ ...styles.cardTitle, color: mod.active ? "#111" : "#aaa" }}>{mod.title}</h3>
+              <p style={{ ...styles.cardDesc, color: mod.active ? "#777" : "#bbb" }}>{mod.desc}</p>
 
               {mod.active ? (
                 <div style={{ ...styles.cardCta, opacity: hoveredId === mod.id ? 1 : 0.6 }}>
@@ -226,61 +226,61 @@ export default function PortailDashboard() {
 }
 
 const styles = {
-  root: { minHeight: "100vh", background: "#0a0a0a", fontFamily: "'DM Sans', sans-serif", position: "relative", overflow: "hidden" },
-  grid: { position: "fixed", inset: 0, backgroundImage: "linear-gradient(rgba(255,0,0,0.03) 1px, transparent 1px),linear-gradient(90deg, rgba(255,0,0,0.03) 1px, transparent 1px)", backgroundSize: "56px 56px", pointerEvents: "none", zIndex: 0 },
-  orb1: { position: "fixed", top: "-15%", right: "-5%", width: "600px", height: "600px", borderRadius: "50%", background: "radial-gradient(circle, rgba(255,0,0,0.12) 0%, transparent 65%)", animation: "pulse1 12s ease-in-out infinite", pointerEvents: "none", zIndex: 0 },
-  orb2: { position: "fixed", bottom: "-20%", left: "-10%", width: "500px", height: "500px", borderRadius: "50%", background: "radial-gradient(circle, rgba(255,0,0,0.08) 0%, transparent 65%)", animation: "pulse2 15s ease-in-out infinite", pointerEvents: "none", zIndex: 0 },
+  root: { minHeight: "100vh", background: "#ffffff", fontFamily: "'DM Sans', sans-serif", position: "relative", overflow: "hidden" },
+  grid: { position: "fixed", inset: 0, backgroundImage: "linear-gradient(rgba(255,0,0,0.04) 1px, transparent 1px),linear-gradient(90deg, rgba(255,0,0,0.04) 1px, transparent 1px)", backgroundSize: "56px 56px", pointerEvents: "none", zIndex: 0 },
+  orb1: { position: "fixed", top: "-15%", right: "-5%", width: "600px", height: "600px", borderRadius: "50%", background: "radial-gradient(circle, rgba(255,0,0,0.07) 0%, transparent 65%)", animation: "pulse1 12s ease-in-out infinite", pointerEvents: "none", zIndex: 0 },
+  orb2: { position: "fixed", bottom: "-20%", left: "-10%", width: "500px", height: "500px", borderRadius: "50%", background: "radial-gradient(circle, rgba(255,0,0,0.04) 0%, transparent 65%)", animation: "pulse2 15s ease-in-out infinite", pointerEvents: "none", zIndex: 0 },
 
   // Nav
-  nav: { position: "sticky", top: 0, zIndex: 100, background: "rgba(10,10,10,0.85)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)" },
+  nav: { position: "sticky", top: 0, zIndex: 100, background: "rgba(255,255,255,0.9)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(0,0,0,0.07)" },
   navInner: { maxWidth: "1100px", margin: "0 auto", padding: "0 24px", height: "64px", display: "flex", alignItems: "center", justifyContent: "space-between" },
   navLogo: { display: "flex", alignItems: "center", gap: "12px" },
-  logoIcon: { width: "40px", height: "40px", background: "rgba(255,0,0,0.08)", border: "1px solid rgba(255,0,0,0.2)", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" },
-  logoTitle: { fontFamily: "'Syne', sans-serif", fontSize: "14px", fontWeight: 800, color: "#fff", letterSpacing: "0.08em" },
-  logoSub: { fontSize: "10px", color: "#555", letterSpacing: "0.1em", textTransform: "uppercase" },
+  logoIcon: { width: "40px", height: "40px", background: "rgba(255,0,0,0.06)", border: "1px solid rgba(255,0,0,0.18)", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" },
+  logoTitle: { fontFamily: "'Syne', sans-serif", fontSize: "14px", fontWeight: 800, color: "#111", letterSpacing: "0.08em" },
+  logoSub: { fontSize: "10px", color: "#aaa", letterSpacing: "0.1em", textTransform: "uppercase" },
   navRight: { position: "relative" },
-  avatarWrap: { display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", padding: "6px 12px", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.03)", transition: "all 0.2s", userSelect: "none" },
+  avatarWrap: { display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", padding: "6px 12px", borderRadius: "12px", border: "1px solid rgba(0,0,0,0.08)", background: "#fafafa", transition: "all 0.2s", userSelect: "none" },
   avatar: { width: "32px", height: "32px", borderRadius: "50%", background: "linear-gradient(135deg, #ff0000, #880000)", color: "#fff", fontSize: "13px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Syne', sans-serif", flexShrink: 0 },
   avatarInfo: { display: "flex", flexDirection: "column" },
-  avatarName: { fontSize: "13px", color: "#fff", fontWeight: 500, lineHeight: 1.3 },
-  avatarRole: { fontSize: "10px", color: "#666", textTransform: "uppercase", letterSpacing: "0.06em" },
+  avatarName: { fontSize: "13px", color: "#111", fontWeight: 500, lineHeight: 1.3 },
+  avatarRole: { fontSize: "10px", color: "#aaa", textTransform: "uppercase", letterSpacing: "0.06em" },
 
   // Dropdown
-  dropdown: { position: "absolute", top: "calc(100% + 10px)", right: 0, background: "#141414", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "16px", padding: "8px", minWidth: "220px", boxShadow: "0 20px 60px rgba(0,0,0,0.7)", zIndex: 200 },
+  dropdown: { position: "absolute", top: "calc(100% + 10px)", right: 0, background: "#ffffff", border: "1px solid rgba(0,0,0,0.09)", borderRadius: "16px", padding: "8px", minWidth: "220px", boxShadow: "0 20px 60px rgba(0,0,0,0.12)", zIndex: 200 },
   dropdownHeader: { display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px 14px" },
   dropdownAvatar: { width: "36px", height: "36px", borderRadius: "50%", background: "linear-gradient(135deg, #ff0000, #880000)", color: "#fff", fontSize: "14px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
-  dropdownDivider: { height: "1px", background: "rgba(255,255,255,0.06)", margin: "4px 0" },
-  dropdownItem: { display: "flex", alignItems: "center", gap: "10px", width: "100%", padding: "10px 12px", background: "none", border: "none", cursor: "pointer", borderRadius: "10px", color: "#aaa", fontSize: "13px", fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s", textAlign: "left" },
+  dropdownDivider: { height: "1px", background: "rgba(0,0,0,0.07)", margin: "4px 0" },
+  dropdownItem: { display: "flex", alignItems: "center", gap: "10px", width: "100%", padding: "10px 12px", background: "none", border: "none", cursor: "pointer", borderRadius: "10px", color: "#555", fontSize: "13px", fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s", textAlign: "left" },
   overlay: { position: "fixed", inset: 0, zIndex: 99 },
 
   // Main
   main: { maxWidth: "1100px", margin: "0 auto", padding: "48px 24px 80px", position: "relative", zIndex: 1 },
   heroSection: { marginBottom: "48px", animation: "fadeUp 0.5s cubic-bezier(.16,1,.3,1) both" },
-  heroBadge: { display: "inline-flex", alignItems: "center", gap: "8px", background: "rgba(255,0,0,0.08)", border: "1px solid rgba(255,0,0,0.2)", borderRadius: "20px", padding: "5px 14px", fontSize: "12px", color: "#ff6666", marginBottom: "18px", letterSpacing: "0.04em" },
+  heroBadge: { display: "inline-flex", alignItems: "center", gap: "8px", background: "rgba(255,0,0,0.06)", border: "1px solid rgba(255,0,0,0.18)", borderRadius: "20px", padding: "5px 14px", fontSize: "12px", color: "#cc0000", marginBottom: "18px", letterSpacing: "0.04em" },
   heroBadgeDot: { width: "6px", height: "6px", borderRadius: "50%", background: "#ff0000", animation: "blink 2s ease-in-out infinite" },
-  heroTitle: { fontFamily: "'Syne', sans-serif", fontSize: "clamp(28px, 5vw, 44px)", fontWeight: 800, color: "#fff", lineHeight: 1.2, marginBottom: "12px" },
+  heroTitle: { fontFamily: "'Syne', sans-serif", fontSize: "clamp(28px, 5vw, 44px)", fontWeight: 800, color: "#111", lineHeight: 1.2, marginBottom: "12px" },
   heroName: { color: "#ff0000" },
-  heroSub: { fontSize: "16px", color: "#666" },
+  heroSub: { fontSize: "16px", color: "#888" },
 
-  sectionLabel: { display: "flex", alignItems: "center", gap: "16px", marginBottom: "28px", animation: "fadeUp 0.5s 0.1s cubic-bezier(.16,1,.3,1) both", opacity: 0, animationFillMode: "forwards" },
-  sectionLine: { flex: 1, height: "1px", background: "rgba(255,255,255,0.06)" },
+  sectionLabel: { display: "flex", alignItems: "center", gap: "16px", marginBottom: "28px", animation: "fadeUp 0.5s 0.1s cubic-bezier(.16,1,.3,1) both", opacity: 0, animationFillMode: "forwards", color: "#aaa", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.08em" },
+  sectionLine: { flex: 1, height: "1px", background: "rgba(0,0,0,0.07)" },
 
   // Cards
   grid2: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "18px" },
   moduleCard: { position: "relative", borderRadius: "20px", padding: "28px 24px", cursor: "pointer", transition: "all 0.25s cubic-bezier(.16,1,.3,1)", animation: "fadeUp 0.5s cubic-bezier(.16,1,.3,1) both", overflow: "hidden" },
-  moduleCardActive: { background: "linear-gradient(145deg, #181818, #131313)", border: "1px solid rgba(255,255,255,0.08)" },
-  moduleCardDisabled: { background: "rgba(14,14,14,0.6)", border: "1px solid rgba(255,255,255,0.04)", cursor: "default" },
-  moduleCardHover: { transform: "translateY(-4px)", boxShadow: "0 20px 60px rgba(255,0,0,0.12)", borderColor: "rgba(255,0,0,0.2)" },
+  moduleCardActive: { background: "#ffffff", border: "1.5px solid rgba(0,0,0,0.09)", boxShadow: "0 2px 12px rgba(0,0,0,0.05)" },
+  moduleCardDisabled: { background: "#fafafa", border: "1.5px solid rgba(0,0,0,0.05)", cursor: "default" },
+  moduleCardHover: { transform: "translateY(-4px)", boxShadow: "0 20px 60px rgba(255,0,0,0.10)", borderColor: "rgba(255,0,0,0.22)" },
   cardAccent: { position: "absolute", top: 0, left: "20%", right: "20%", height: "2px", background: "linear-gradient(90deg, transparent, #ff0000, transparent)", borderRadius: "0 0 4px 4px" },
   cardHeader: { display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "18px" },
   cardIconWrap: { width: "52px", height: "52px", borderRadius: "14px", display: "flex", alignItems: "center", justifyContent: "center" },
-  cardIconActive: { background: "rgba(255,0,0,0.08)", border: "1px solid rgba(255,0,0,0.15)" },
-  cardIconDisabled: { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.04)" },
-  activeBadge: { display: "flex", alignItems: "center", gap: "6px", background: "rgba(0,200,100,0.08)", border: "1px solid rgba(0,200,100,0.2)", borderRadius: "20px", padding: "4px 10px", fontSize: "11px", color: "#00c864" },
-  activeDot: { width: "5px", height: "5px", borderRadius: "50%", background: "#00c864" },
-  soonBadge: { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "20px", padding: "4px 10px", fontSize: "11px", color: "#555" },
+  cardIconActive: { background: "rgba(255,0,0,0.06)", border: "1px solid rgba(255,0,0,0.15)" },
+  cardIconDisabled: { background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.06)" },
+  activeBadge: { display: "flex", alignItems: "center", gap: "6px", background: "rgba(0,180,90,0.07)", border: "1px solid rgba(0,180,90,0.2)", borderRadius: "20px", padding: "4px 10px", fontSize: "11px", color: "#00a050" },
+  activeDot: { width: "5px", height: "5px", borderRadius: "50%", background: "#00a050" },
+  soonBadge: { background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.07)", borderRadius: "20px", padding: "4px 10px", fontSize: "11px", color: "#bbb" },
   cardTitle: { fontFamily: "'Syne', sans-serif", fontSize: "16px", fontWeight: 700, marginBottom: "8px" },
   cardDesc: { fontSize: "13px", lineHeight: 1.6, marginBottom: "20px" },
   cardCta: { display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", fontWeight: 600, color: "#ff0000", transition: "opacity 0.2s", fontFamily: "'Syne', sans-serif" },
-  cardLocked: { display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#444" },
+  cardLocked: { display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#bbb" },
 };

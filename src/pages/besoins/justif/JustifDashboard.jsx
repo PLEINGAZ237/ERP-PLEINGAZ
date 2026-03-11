@@ -26,29 +26,40 @@ export default function JustifDashboard() {
     const load = async () => {
       setLoading(true)
 
-      const { data: besoins } = await supabase
+      const { data, error } = await supabase
         .from('besoins')
         .select(`
           id, numero, montant_demande, description, statut, created_at,
           profiles!employe_id(nom, prenom, departements(nom)),
           decaissements(montant_decaisse, created_at,
-            profiles!caissiere_id(nom, prenom)
-          ),
-          justificatifs(id)
+            justificatifs(id, numero_facture, montant_facture, created_at)
+          )
         `)
-        .in('statut', ['DECAISSE', 'EN_ATTENTE_RETOUR_CAISSE', 'BOUCLE'])
         .order('created_at', { ascending: false })
 
-      if (besoins) {
+      if (error) console.error('Erreur chargement besoins justif:', error)
+
+      // Filtrage côté client : ne garder que les besoins décaissés et au-delà
+      const besoins = (data ?? []).filter(b =>
+        ['DECAISSE', 'EN_ATTENTE_RETOUR_CAISSE', 'BOUCLE'].includes(b.statut)
+      )
+
+      if (besoins.length >= 0) {
+        // Helper : vérifier si un besoin a déjà un justificatif (imbriqué dans decaissements)
+        const aDesJustificatifs = (b) => {
+          const justifs = b.decaissements?.[0]?.justificatifs
+          return justifs && justifs.length > 0
+        }
+
         // En attente = DECAISSE sans justificatif déjà saisi
         const enAttenteList = besoins.filter(
-          b => b.statut === 'DECAISSE' && (!b.justificatifs || b.justificatifs.length === 0)
+          b => b.statut === 'DECAISSE' && !aDesJustificatifs(b)
         )
         // Historique = ceux déjà traités ou avec justificatif
         const historiqueList = besoins.filter(
           b => b.statut === 'BOUCLE' ||
                b.statut === 'EN_ATTENTE_RETOUR_CAISSE' ||
-               (b.statut === 'DECAISSE' && b.justificatifs?.length > 0)
+               (b.statut === 'DECAISSE' && aDesJustificatifs(b))
         )
         setEnAttente(enAttenteList)
         setHistorique(historiqueList)
