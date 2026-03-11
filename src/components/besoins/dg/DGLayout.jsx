@@ -2,7 +2,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 
 const NAV = [
-  { path: '/dg', label: 'Tableau de bord', exact: true },
+  { path: '/besoins/dg', label: 'Tableau de bord', exact: true },
+  { path: '/besoins/dg/analyse', label: 'Analyse besoins' },
 ]
 
 export default function DGLayout({ children }) {

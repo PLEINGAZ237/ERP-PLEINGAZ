@@ -66,7 +66,7 @@ export default function EmployeDashboard() {
       <div className="bg-white rounded-xl shadow p-5">
         <div className="flex justify-between items-center mb-4">
           <h2 className="font-semibold text-gray-700">Derniers besoins</h2>
-          <Link to="/employe/mes-besoins" className="text-sm text-blue-600 hover:underline">
+          <Link to="/besoins/employe/mes-besoins" className="text-sm text-blue-600 hover:underline">
             Voir tout →
           </Link>
         </div>
@@ -75,7 +75,7 @@ export default function EmployeDashboard() {
           <div className="text-center py-8">
             <p className="text-gray-400 mb-4">Vous n'avez pas encore de besoins.</p>
             <Link
-              to="/employe/creer-besoin"
+              to="/besoins/employe/creer-besoin"
               className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700"
             >
               Créer mon premier besoin

@@ -104,7 +104,7 @@ export default function MesBesoins() {
           Historique des besoins
         </h1>
         <a
-          href='/employe/creer-besoin'
+          href='/besoins/employe/creer-besoin'
           className='w-full sm:w-auto bg-blue-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-blue-700 text-center transition-all shadow-lg shadow-blue-500/20'
         >
           + Nouveau besoin

@@ -2,9 +2,9 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 
 const NAV = [
-  { path: '/caissiere',             label: 'Décaissements à effectuer', exact: true },
-  { path: '/employe/creer-besoin',  label: '+ Nouveau besoin' },
-  { path: '/employe/mes-besoins',   label: 'Mes besoins (Employé)' },
+  { path: '/besoins/caissiere',             label: 'Décaissements à effectuer', exact: true },
+  { path: '/besoins/employe/creer-besoin',  label: '+ Nouveau besoin' },
+  { path: '/besoins/employe/mes-besoins',   label: 'Mes besoins (Employé)' },
 ]
 
 export default function CaissiereLayout({ children }) {

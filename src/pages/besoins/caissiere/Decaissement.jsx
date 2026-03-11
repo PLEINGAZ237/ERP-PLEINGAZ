@@ -134,7 +134,7 @@ export default function Decaissement() {
     }
 
     setSuccess('Décaissement enregistré avec succès.')
-    setTimeout(() => navigate('/caissiere'), 1800)
+    setTimeout(() => navigate('/besoins/caissiere'), 1800)
   }
 
   // Confirmer le retour en caisse
@@ -163,7 +163,7 @@ export default function Decaissement() {
       setConfirmAction(null)
       if (errUpdate) { setError(errUpdate.message); return }
       setSuccess('Retour en caisse confirmé — besoin bouclé.')
-      setTimeout(() => navigate('/caissiere'), 1800)
+      setTimeout(() => navigate('/besoins/caissiere'), 1800)
       return
     }
 
@@ -195,7 +195,7 @@ export default function Decaissement() {
     if (errUpdate) { setError(errUpdate.message); return }
 
     setSuccess('Retour en caisse confirmé — besoin bouclé.')
-    setTimeout(() => navigate('/caissiere'), 1800)
+    setTimeout(() => navigate('/besoins/caissiere'), 1800)
   }
 
   if (loading) {
@@ -219,7 +219,7 @@ export default function Decaissement() {
       {/* En-tête */}
       <div className="flex items-center gap-4 mb-6">
         <button
-          onClick={() => navigate('/caissiere')}
+          onClick={() => navigate('/besoins/caissiere')}
           className="text-teal-600 hover:underline text-sm"
         >
           ← Retour

@@ -130,7 +130,7 @@ export default function ValiderBesoinDG() {
     setConfirmAction(null)
     if (rpcErr) { setError(rpcErr.message); return }
     setSuccess(action === 'valide' ? 'Besoin validé.' : 'Besoin rejeté.')
-    setTimeout(() => navigate('/dg'), 1800)
+    setTimeout(() => navigate('/besoins/dg'), 1800)
   }
 
   if (loading) return <DGLayout><p className="text-gray-400 text-center py-20">Chargement...</p></DGLayout>
@@ -144,7 +144,7 @@ export default function ValiderBesoinDG() {
     <DGLayout>
       {/* En-tête */}
       <div className="flex items-center gap-4 mb-6">
-        <button onClick={() => navigate('/dg')} className="text-emerald-600 hover:underline text-sm">
+        <button onClick={() => navigate('/besoins/dg')} className="text-emerald-600 hover:underline text-sm">
           ← Retour
         </button>
         <div>

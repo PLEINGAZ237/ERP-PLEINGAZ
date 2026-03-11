@@ -2,9 +2,9 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 
 const NAV = [
-  { path: '/justif',                label: 'Justificatifs à saisir', exact: true },
-  { path: '/employe/creer-besoin',  label: '+ Nouveau besoin' },
-  { path: '/employe/mes-besoins',   label: 'Mes besoins (Employé)' },
+  { path: '/besoins/justif',                label: 'Justificatifs à saisir', exact: true },
+  { path: '/besoins/employe/creer-besoin',  label: '+ Nouveau besoin' },
+  { path: '/besoins/employe/mes-besoins',   label: 'Mes besoins (Employé)' },
 ]
 
 export default function JustifLayout({ children }) {

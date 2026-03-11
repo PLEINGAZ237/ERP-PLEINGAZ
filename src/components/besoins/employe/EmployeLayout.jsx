@@ -12,18 +12,18 @@ import {
 
 const NAV = [
   {
-    path: '/employe',
+    path: '/besoins/employe',
     label: 'Tableau de bord',
     icon: <LayoutDashboard size={18} />,
     exact: true,
   },
   {
-    path: '/employe/creer-besoin',
+    path: '/besoins/employe/creer-besoin',
     label: 'Nouveau besoin',
     icon: <PlusCircle size={18} />,
   },
   {
-    path: '/employe/mes-besoins',
+    path: '/besoins/employe/mes-besoins',
     label: 'Mes besoins',
     icon: <List size={18} />,
   },
@@ -69,7 +69,7 @@ export default function EmployeLayout({ children }) {
           {NAV.map(({ path, label, icon, exact }) => {
             const active = exact
               ? location.pathname === path
-              : location.pathname.startsWith(path) && path !== '/employe'
+              : location.pathname.startsWith(path) && path !== '/besoins/employe'
             return (
               <Link
                 key={path}

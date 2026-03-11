@@ -196,7 +196,7 @@ export default function SaisirJustificatif() {
       if (errUpdate) { setError(errUpdate.message); return }
 
       setSuccess('Justificatif enregistré — besoin bouclé.')
-      setTimeout(() => navigate('/justif'), 1800)
+      setTimeout(() => navigate('/besoins/justif'), 1800)
     } else {
       // Cas 2 : Montant facture < Montant décaissé → retour en caisse
       // Créer l'enregistrement retour_caisse
@@ -231,7 +231,7 @@ export default function SaisirJustificatif() {
       setSuccess(
         `Justificatif enregistré — retour en caisse de ${reliquat.toLocaleString('fr-FR')} FCFA attendu.`
       )
-      setTimeout(() => navigate('/justif'), 2500)
+      setTimeout(() => navigate('/besoins/justif'), 2500)
     }
   }
 
@@ -260,7 +260,7 @@ export default function SaisirJustificatif() {
       {/* En-tête */}
       <div className="flex items-center gap-4 mb-6">
         <button
-          onClick={() => navigate('/justif')}
+          onClick={() => navigate('/besoins/justif')}
           className="text-orange-600 hover:underline text-sm"
         >
           ← Retour

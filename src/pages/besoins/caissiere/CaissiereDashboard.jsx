@@ -99,7 +99,7 @@ export default function CaissiereDashboard() {
                 <tr
                   key={b.id}
                   className="border-b hover:bg-gray-50 cursor-pointer"
-                  onClick={() => navigate(`/caissiere/besoin/${b.id}`)}
+                  onClick={() => navigate(`/besoins/caissiere/besoin/${b.id}`)}
                 >
                   <td className="px-4 py-3 font-mono text-xs text-gray-600">{b.numero}</td>
                   <td className="px-4 py-3 font-medium text-gray-700">

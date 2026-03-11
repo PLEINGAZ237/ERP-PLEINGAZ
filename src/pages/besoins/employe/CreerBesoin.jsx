@@ -50,7 +50,7 @@ export default function CreerBesoin() {
 
     setSuccess(`Besoin créé avec succès ! Numéro : ${data.numero}`)
     setForm({ description: '', montant: '', justification: '' })
-    setTimeout(() => navigate('/employe/mes-besoins'), 2000)
+    setTimeout(() => navigate('/besoins/employe/mes-besoins'), 2000)
   }
 
   return (
@@ -136,7 +136,7 @@ export default function CreerBesoin() {
               </button>
               <button
                 type='button'
-                onClick={() => navigate('/employe')}
+                onClick={() => navigate('/besoins/employe')}
                 className='sm:order-1 w-full sm:w-auto px-6 py-3 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 text-gray-600 font-bold'
               >
                 Annuler
