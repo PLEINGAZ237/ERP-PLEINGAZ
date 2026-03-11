@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
-import DGLayout from '@/components/besoins/dg/DGLayout'
+import DGLayout from '../../../components/besoins/dg/DGLayout'
 
 export default function ValiderBesoinDG() {
   const { id } = useParams()

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
-import DGLayout from '@/components/besoins/dg/DGLayout'
+import DGLayout from '../../..DGLayout/components/besoins/dg/DGLayout'
 
 const TOUS_STATUTS = [
   { value: 'EN_ATTENTE_DFC', label: 'En attente DFC' },
