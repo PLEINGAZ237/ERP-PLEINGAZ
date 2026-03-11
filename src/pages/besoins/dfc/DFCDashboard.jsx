@@ -171,7 +171,7 @@ export default function DFCDashboard() {
           </thead>
           <tbody>
             {data.map(b => {
-              const montantRejete = b.validations_dfc?.[b.validations_dfc.length - 1]?.montant_valide
+              const montantRejete = b.montant_demande
               return (
                 <tr key={b.id} className="border-b hover:bg-gray-50 cursor-pointer"
                   onClick={() => navigate(`/besoins/dfc/besoin/${b.id}`)}>
