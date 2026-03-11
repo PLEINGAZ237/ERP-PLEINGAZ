@@ -38,6 +38,7 @@ import ValiderBesoin       from './pages/besoins/dfc/ValiderBesoin'
 // ── Module Besoins : DG ──────────────────────────────────────────────────────
 import DGDashboard         from './pages/besoins/dg/DGDashboard'
 import ValiderBesoinDG     from './pages/besoins/dg/ValiderBesoinDG'
+import AnalyseBesoins      from './pages/besoins/dg/AnalyseBesoins'
 
 // ── Module Besoins : Caissière ───────────────────────────────────────────────
 import CaissiereDashboard  from './pages/besoins/caissiere/CaissiereDashboard'
@@ -100,6 +101,7 @@ function App() {
 
           {/* ── Module Besoins : DG ──────────────────────────────── */}
           <Route path="/besoins/dg"             element={<ProtectedRoute roles={['DG']}><DGDashboard /></ProtectedRoute>} />
+          <Route path="/besoins/dg/analyse"     element={<ProtectedRoute roles={['DG']}><AnalyseBesoins /></ProtectedRoute>} />
           <Route path="/besoins/dg/besoin/:id"  element={<ProtectedRoute roles={['DG']}><ValiderBesoinDG /></ProtectedRoute>} />
 
           {/* ── Module Besoins : Caissière ───────────────────────── */}
