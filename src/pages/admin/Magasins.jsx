@@ -1,5 +1,5 @@
-import AdminLayout from '@/components/besoins/admin/AdminLayout'
-import CrudTable   from '@/components/besoins/admin/CrudTable'
+import AdminLayout from '@/components/admin/AdminLayout'
+import CrudTable   from '@/components/admin/CrudTable'
 
 const COLUMNS = [
   { key: 'nom',           label: 'Nom',        required: true },
@@ -7,10 +7,10 @@ const COLUMNS = [
 ]
 const RELATIONS = { entreprise_id: { table: 'entreprises', labelKey: 'nom', filterActive: false } }
 
-export default function Banques() {
+export default function Magasins() {
   return (
     <AdminLayout>
-      <CrudTable table="banques" title="Banques" columns={COLUMNS} relations={RELATIONS} />
+      <CrudTable table="magasins" title="Magasins / Dépôts" columns={COLUMNS} relations={RELATIONS} />
     </AdminLayout>
   )
 }

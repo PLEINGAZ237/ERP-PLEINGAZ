@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import AdminLayout from '@/components/besoins/admin/AdminLayout'
+import AdminLayout from '@/components/admin/AdminLayout'
 
 const EXCEPTIONS_EMAIL = ['blkenfack@hotmail.com']
 

@@ -14,17 +14,17 @@ import PortailDashboard    from './pages/portails/Dashboard'
 import BesoinsDashboard    from './pages/besoins/BesoinsDashboard' 
 
 // ── Module Besoins : Admin ───────────────────────────────────────────────────
-import AdminDashboard      from './pages/besoins/admin/AdminDashboard'
-import Entreprises         from './pages/besoins/admin/Entreprises'
-import Departements        from './pages/besoins/admin/Departements'
-import Caisses             from './pages/besoins/admin/Caisses'
-import Agences             from './pages/besoins/admin/Agences'
-import Magasins            from './pages/besoins/admin/Magasins'
-import Citernes            from './pages/besoins/admin/Citernes'
-import Banques             from './pages/besoins/admin/Banques'
-import Virements           from './pages/besoins/admin/Virements'
-import Roles               from './pages/besoins/admin/Roles'
-import Utilisateurs        from './pages/besoins/admin/Utilisateurs'
+import AdminDashboard      from './pages/admin/AdminDashboard'
+import Entreprises         from './pages/admin/Entreprises'
+import Departements        from './pages/admin/Departements'
+import Caisses             from './pages/admin/Caisses'
+import Agences             from './pages/admin/Agences'
+import Magasins            from './pages/admin/Magasins'
+import Citernes            from './pages/admin/Citernes'
+import Banques             from './pages/admin/Banques'
+import Virements           from './pages/admin/Virements'
+import Roles               from './pages/admin/Roles'
+import Utilisateurs        from './pages/admin/Utilisateurs'
 
 // ── Module Besoins : Employé ─────────────────────────────────────────────────
 import EmployeDashboard    from './pages/besoins/employe/EmployeDashboard'
@@ -79,16 +79,16 @@ function App() {
 
           {/* ── Module Besoins : Admin ────────────────────────────── */}
           <Route path="/besoins/admin"              element={<ProtectedRoute roles={['Admin']}><AdminDashboard /></ProtectedRoute>} />
-          <Route path="/besoins/admin/entreprises"  element={<ProtectedRoute roles={['Admin']}><Entreprises /></ProtectedRoute>} />
-          <Route path="/besoins/admin/departements" element={<ProtectedRoute roles={['Admin']}><Departements /></ProtectedRoute>} />
-          <Route path="/besoins/admin/caisses"      element={<ProtectedRoute roles={['Admin']}><Caisses /></ProtectedRoute>} />
-          <Route path="/besoins/admin/agences"      element={<ProtectedRoute roles={['Admin']}><Agences /></ProtectedRoute>} />
-          <Route path="/besoins/admin/magasins"     element={<ProtectedRoute roles={['Admin']}><Magasins /></ProtectedRoute>} />
-          <Route path="/besoins/admin/citernes"     element={<ProtectedRoute roles={['Admin']}><Citernes /></ProtectedRoute>} />
-          <Route path="/besoins/admin/banques"      element={<ProtectedRoute roles={['Admin']}><Banques /></ProtectedRoute>} />
-          <Route path="/besoins/admin/virements"    element={<ProtectedRoute roles={['Admin']}><Virements /></ProtectedRoute>} />
-          <Route path="/besoins/admin/roles"        element={<ProtectedRoute roles={['Admin']}><Roles /></ProtectedRoute>} />
-          <Route path="/besoins/admin/utilisateurs" element={<ProtectedRoute roles={['Admin']}><Utilisateurs /></ProtectedRoute>} />
+          <Route path="/admin/entreprises"  element={<ProtectedRoute roles={['Admin']}><Entreprises /></ProtectedRoute>} />
+          <Route path="/admin/departements" element={<ProtectedRoute roles={['Admin']}><Departements /></ProtectedRoute>} />
+          <Route path="/admin/caisses"      element={<ProtectedRoute roles={['Admin']}><Caisses /></ProtectedRoute>} />
+          <Route path="/admin/agences"      element={<ProtectedRoute roles={['Admin']}><Agences /></ProtectedRoute>} />
+          <Route path="/admin/magasins"     element={<ProtectedRoute roles={['Admin']}><Magasins /></ProtectedRoute>} />
+          <Route path="/admin/citernes"     element={<ProtectedRoute roles={['Admin']}><Citernes /></ProtectedRoute>} />
+          <Route path="/admin/banques"      element={<ProtectedRoute roles={['Admin']}><Banques /></ProtectedRoute>} />
+          <Route path="/admin/virements"    element={<ProtectedRoute roles={['Admin']}><Virements /></ProtectedRoute>} />
+          <Route path="/admin/roles"        element={<ProtectedRoute roles={['Admin']}><Roles /></ProtectedRoute>} />
+          <Route path="/admin/utilisateurs" element={<ProtectedRoute roles={['Admin']}><Utilisateurs /></ProtectedRoute>} />
 
           {/* ── Module Besoins : Employé ──────────────────────────── */}
           <Route path="/besoins/employe"              element={<ProtectedRoute roles={['Employe','DFC','DG','Caissiere','Justif']}><EmployeDashboard /></ProtectedRoute>} />

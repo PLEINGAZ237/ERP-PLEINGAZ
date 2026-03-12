@@ -1,4 +1,4 @@
-import AdminLayout from '@/components/besoins/admin/AdminLayout'
+import AdminLayout from '@/components/admin/AdminLayout'
 import { Link } from 'react-router-dom'
 import {
   Building2,
