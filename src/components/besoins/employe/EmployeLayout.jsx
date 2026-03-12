@@ -50,18 +50,18 @@ export default function EmployeLayout({ children }) {
         </button>
       </div>
 
-      {/* Sidebar - Overlay sur mobile, fixe sur desktop */}
+      {/* Sidebar - Overlay sur mobile, sticky sur desktop */}
       <aside
         className={`
         fixed inset-y-0 left-0 z-40 w-64 bg-blue-900 text-white flex flex-col transform transition-transform duration-300 ease-in-out
         ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}
-        md:relative md:translate-x-0 md:flex shrink-0
+        md:sticky md:top-0 md:h-screen md:translate-x-0 md:flex shrink-0
       `}
       >
         <div className='p-6 border-b border-blue-800 hidden md:block'>
           <p className='font-bold text-lg tracking-tight'>MonPleinGaz</p>
           <p className='text-xs text-blue-300 uppercase tracking-widest mt-1'>
-            Espace Employé
+            Émetteur de besoin
           </p>
         </div>
 
@@ -94,7 +94,7 @@ export default function EmployeLayout({ children }) {
               {profile?.prenom} {profile?.nom}
             </p>
             <p className='text-[10px] text-blue-400 uppercase font-bold truncate'>
-              {roles.join(' • ')}
+              Chef de département · {profile?.departements?.nom ?? '—'}
             </p>
           </div>
           <button

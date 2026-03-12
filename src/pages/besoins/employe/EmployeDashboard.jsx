@@ -42,11 +42,13 @@ export default function EmployeDashboard() {
   return (
     <EmployeLayout>
       <h1 className="text-2xl font-bold text-gray-800 mb-2">
-        Bonjour, {profile?.prenom || 'Employé'} 👋
+        Bonjour, {profile?.prenom} {profile?.nom} 👋
       </h1>
-      <p className="text-gray-500 mb-8 text-sm">
-        {profile?.entreprises?.nom ?? ''} — {profile?.departements?.nom ?? ''}
-      </p>
+      <div className="flex items-center gap-2 mb-8">
+        <span className="text-sm text-gray-600 font-medium">{profile?.entreprises?.nom ?? '—'}</span>
+        <span className="text-gray-300">•</span>
+        <span className="text-sm text-gray-500">{profile?.departements?.nom ?? '—'}</span>
+      </div>
 
       {/* Cartes stats */}
       <div className="grid grid-cols-3 gap-4 mb-8">

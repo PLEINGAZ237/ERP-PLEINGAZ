@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import EmployeLayout from '@/components/besoins/employe/EmployeLayout'
@@ -103,12 +104,12 @@ export default function MesBesoins() {
         <h1 className='text-xl md:text-2xl font-bold text-gray-800'>
           Historique des besoins
         </h1>
-        <a
-          href='/besoins/employe/creer-besoin'
+        <Link
+          to='/besoins/employe/creer-besoin'
           className='w-full sm:w-auto bg-blue-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-blue-700 text-center transition-all shadow-lg shadow-blue-500/20'
         >
           + Nouveau besoin
-        </a>
+        </Link>
       </div>
 
       <div className='bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden'>

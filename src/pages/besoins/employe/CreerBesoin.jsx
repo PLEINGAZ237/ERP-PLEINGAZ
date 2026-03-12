@@ -82,7 +82,7 @@ export default function CreerBesoin() {
 
             <div>
               <label className='block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2'>
-                Montant (FCFA) <span className='text-red-500'>*</span>
+                Montant demandée <span className='text-red-500'>*</span>
               </label>
               <div className='relative'>
                 <input
