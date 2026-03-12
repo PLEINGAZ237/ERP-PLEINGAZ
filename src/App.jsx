@@ -17,6 +17,8 @@ import BesoinsDashboard    from './pages/besoins/BesoinsDashboard'
 import AdminDashboard      from './pages/admin/AdminDashboard'
 import Entreprises         from './pages/admin/Entreprises'
 import Departements        from './pages/admin/Departements'
+import Services            from './pages/admin/Services'
+import Modules             from './pages/admin/Modules'
 import Caisses             from './pages/admin/Caisses'
 import Agences             from './pages/admin/Agences'
 import Magasins            from './pages/admin/Magasins'
@@ -70,8 +72,6 @@ function App() {
           />
 
           {/* ── Module Besoins : routeur de rôle ─────────────────── */}
-          {/* Quand on clique sur le module "Besoins" dans le portail, */}
-          {/* cette route redirige vers /besoins/dg, /besoins/dfc, etc. */}
           <Route
             path="/besoins"
             element={<ProtectedRoute><BesoinsDashboard /></ProtectedRoute>}
@@ -81,6 +81,8 @@ function App() {
           <Route path="/besoins/admin"              element={<ProtectedRoute roles={['Admin']}><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/entreprises"  element={<ProtectedRoute roles={['Admin']}><Entreprises /></ProtectedRoute>} />
           <Route path="/admin/departements" element={<ProtectedRoute roles={['Admin']}><Departements /></ProtectedRoute>} />
+          <Route path="/admin/services"     element={<ProtectedRoute roles={['Admin']}><Services /></ProtectedRoute>} />
+          <Route path="/admin/modules"      element={<ProtectedRoute roles={['Admin']}><Modules /></ProtectedRoute>} />
           <Route path="/admin/caisses"      element={<ProtectedRoute roles={['Admin']}><Caisses /></ProtectedRoute>} />
           <Route path="/admin/agences"      element={<ProtectedRoute roles={['Admin']}><Agences /></ProtectedRoute>} />
           <Route path="/admin/magasins"     element={<ProtectedRoute roles={['Admin']}><Magasins /></ProtectedRoute>} />
@@ -117,7 +119,6 @@ function App() {
           {/* <Route path="/depotage" element={<ProtectedRoute><DepotageDashboard /></ProtectedRoute>} /> */}
 
           {/* ── Redirections de compatibilité (anciennes URLs) ────── */}
-          {/* Si quelqu'un a bookmarké /dg ou /caissiere, on redirige */}
           <Route path="/admin"      element={<Navigate to="/besoins/admin" replace />} />
           <Route path="/dg"         element={<Navigate to="/besoins/dg" replace />} />
           <Route path="/dfc"        element={<Navigate to="/besoins/dfc" replace />} />

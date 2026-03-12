@@ -10,9 +10,11 @@ import {
   Users,
   CreditCard,
   Landmark,
-  Warehouse, // Corrigé : Majuscule ici
+  Warehouse,
   Fuel,
   List,
+  Network,
+  Box,
 } from 'lucide-react'
 
 const NAV = [
@@ -24,9 +26,11 @@ const NAV = [
   },
   { path: '/admin/entreprises', label: 'Entreprises', icon: Building2 },
   { path: '/admin/departements', label: 'Départements', icon: List },
+  { path: '/admin/services', label: 'Services', icon: Network },
+  { path: '/admin/modules', label: 'Modules', icon: Box },
   { path: '/admin/caisses', label: 'Caisses', icon: CreditCard },
   { path: '/admin/agences', label: 'Agences', icon: Building2 },
-  { path: '/admin/magasins', label: 'Magasins', icon: Warehouse }, // Corrigé : Majuscule ici
+  { path: '/admin/magasins', label: 'Magasins', icon: Warehouse },
   { path: '/admin/citernes', label: 'Citernes', icon: Fuel },
   { path: '/admin/banques', label: 'Banques', icon: Landmark },
   { path: '/admin/utilisateurs', label: 'Utilisateurs', icon: Users },
@@ -92,7 +96,7 @@ export default function AdminLayout({ children }) {
           })}
         </nav>
 
-        {/* Footer Sidebar Fixe ( sticky ) */}
+        {/* Footer Sidebar Fixe */}
         <div className='p-4 border-t border-gray-800 bg-gray-900 sticky bottom-0'>
           <div className='px-2 mb-4'>
             <p className='text-sm font-medium text-white truncate'>

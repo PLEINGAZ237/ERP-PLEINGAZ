@@ -14,3 +14,95 @@ The React Compiler is not enabled on this template because of its impact on dev 
 ## Expanding the ESLint configuration
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
+```
+ERP-PLEINGAZ
+├─ README.md
+├─ eslint.config.js
+├─ fix-imports.mjs
+├─ index.html
+├─ package-lock.json
+├─ package.json
+├─ public
+│  └─ vite.svg
+├─ src
+│  ├─ App.css
+│  ├─ App.jsx
+│  ├─ assets
+│  │  └─ react.svg
+│  ├─ components
+│  │  ├─ ProtectedRoute.jsx
+│  │  ├─ RoleGuard.jsx
+│  │  ├─ admin
+│  │  │  ├─ AdminLayout.jsx
+│  │  │  └─ CrudTable.jsx
+│  │  └─ besoins
+│  │     ├─ caissiere
+│  │     │  └─ CaissiereLayout.jsx
+│  │     ├─ dfc
+│  │     │  └─ DFCLayout.jsx
+│  │     ├─ dg
+│  │     │  └─ DGLayout.jsx
+│  │     ├─ employe
+│  │     │  └─ EmployeLayout.jsx
+│  │     └─ justif
+│  │        └─ JustifLayout.jsx
+│  ├─ contexts
+│  │  └─ AuthContext.jsx
+│  ├─ index.css
+│  ├─ lib
+│  │  └─ supabase.js
+│  ├─ main.jsx
+│  └─ pages
+│     ├─ ChangePassword.jsx
+│     ├─ CompleteProfile.jsx
+│     ├─ Login.jsx
+│     ├─ admin
+│     │  ├─ AdminDashboard.jsx
+│     │  ├─ Agences.jsx
+│     │  ├─ Banques.jsx
+│     │  ├─ Caisses.jsx
+│     │  ├─ Citernes.jsx
+│     │  ├─ Departements.jsx
+│     │  ├─ Entreprises.jsx
+│     │  ├─ Magasins.jsx
+│     │  ├─ Roles.jsx
+│     │  ├─ Utilisateurs.jsx
+│     │  └─ Virements.jsx
+│     ├─ besoins
+│     │  ├─ BesoinsDashboard.jsx
+│     │  ├─ caissiere
+│     │  │  ├─ CaissiereDashboard.jsx
+│     │  │  └─ Decaissement.jsx
+│     │  ├─ dfc
+│     │  │  ├─ DFCDashboard.jsx
+│     │  │  └─ ValiderBesoin.jsx
+│     │  ├─ dg
+│     │  │  ├─ AnalyseBesoins.jsx
+│     │  │  ├─ DGDashboard.jsx
+│     │  │  └─ ValiderBesoinDG.jsx
+│     │  ├─ employe
+│     │  │  ├─ CreerBesoin.jsx
+│     │  │  ├─ EmployeDashboard.jsx
+│     │  │  └─ MesBesoins.jsx
+│     │  └─ justif
+│     │     ├─ JustifDashboard.jsx
+│     │     └─ SaisirJustificatif.jsx
+│     └─ portails
+│        └─ Dashboard.jsx
+├─ supabase
+│  ├─ .temp
+│  │  └─ cli-latest
+│  ├─ config.toml
+│  └─ functions
+│     ├─ create-user
+│     │  ├─ .npmrc
+│     │  ├─ deno.json
+│     │  └─ index.ts
+│     └─ send-email-notification
+│        ├─ .npmrc
+│        ├─ deno.json
+│        └─ index.ts
+└─ vite.config.js
+
+```
