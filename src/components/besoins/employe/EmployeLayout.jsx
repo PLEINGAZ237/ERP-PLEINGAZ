@@ -65,7 +65,10 @@ export default function EmployeLayout({ children }) {
           </p>
         </div>
 
-        <nav className='flex-1 py-4 px-3 space-y-1'>
+        {/* Spacer mobile pour ne pas masquer le premier item derrière la topbar */}
+        <div className='h-16 md:hidden shrink-0' />
+
+        <nav className='flex-1 py-2 px-3 space-y-1 overflow-y-auto'>
           {NAV.map(({ path, label, icon, exact }) => {
             const active = exact
               ? location.pathname === path
@@ -89,13 +92,21 @@ export default function EmployeLayout({ children }) {
         </nav>
 
         <div className='p-4 border-t border-blue-800 bg-blue-950/50'>
-          <div className='mb-4 px-2'>
-            <p className='text-sm font-medium text-white truncate'>
+          <div className='mb-4 px-2 space-y-1'>
+            <p className='text-sm font-bold text-white truncate'>
               {profile?.prenom} {profile?.nom}
             </p>
-            <p className='text-[10px] text-blue-400 uppercase font-bold truncate'>
-              Chef de département · {profile?.departements?.nom ?? '—'}
+            <p className='text-xs text-blue-300 font-semibold truncate'>
+              {profile?.entreprises?.nom ?? '—'}
             </p>
+            <p className='text-xs text-blue-400 truncate'>
+              {profile?.departements?.nom ?? '—'}
+            </p>
+            {profile?.services?.nom && (
+              <p className='text-sm text-blue-500/80 truncate'>
+                Responsable <span className='font-semibold text-blue-300'>{profile.services.nom}</span>
+              </p>
+            )}
           </div>
           <button
             onClick={handleSignOut}

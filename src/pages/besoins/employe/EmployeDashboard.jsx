@@ -148,13 +148,20 @@ export default function EmployeDashboard() {
 
   return (
     <EmployeLayout>
-      <h1 className="text-2xl font-bold text-gray-800 mb-2">
+      <h1 className="text-2xl font-bold text-gray-800 mb-1">
         Bonjour, {profile?.prenom} {profile?.nom} 👋
       </h1>
-      <div className="flex items-center gap-2 mb-8">
-        <span className="text-sm text-gray-600 font-medium">{profile?.entreprises?.nom ?? '—'}</span>
-        <span className="text-gray-300">•</span>
-        <span className="text-sm text-gray-500">{profile?.departements?.nom ?? '—'}</span>
+      <div className="flex flex-col mb-8 gap-0.5">
+        <div className="flex flex-wrap items-center gap-x-2">
+          <span className="text-base font-semibold text-gray-700">{profile?.entreprises?.nom ?? '—'}</span>
+          <span className="text-gray-300">•</span>
+          <span className="text-base text-gray-500">{profile?.departements?.nom ?? '—'}</span>
+        </div>
+        {profile?.services?.nom && (
+          <span className="text-lg text-blue-800">
+            Responsable <span className="font-semibold text-blue-800">{profile.services.nom}</span>
+          </span>
+        )}
       </div>
 
       {/* ── Cartes stats cliquables ─────────────────────────────────────── */}
@@ -198,7 +205,7 @@ export default function EmployeDashboard() {
         <div className="flex justify-between items-center px-5 py-4 border-b">
           <div className="flex items-center gap-3">
             <h2 className="font-semibold text-gray-700">
-              {filtre ? `Besoins — ${FILTRE_STATUTS[filtre].map(s => STATUT_LABEL[s]).join(', ')}` : 'Derniers besoins'}
+              {filtre === 'EN_ATTENTE' ? (besoinsFiltres.length > 1 ? 'Besoins validés/en attente' : 'Besoin validé/en attente') : filtre === 'DECAISSE' ? (besoinsFiltres.length > 1 ? 'Besoins décaissés' : 'Besoin décaissé') : filtre === 'BOUCLE' ? (besoinsFiltres.length > 1 ? 'Besoins bouclés' : 'Besoin bouclé') : filtre === 'REJETE' ? (besoinsFiltres.length > 1 ? 'Besoins rejetés' : 'Besoin rejeté') : 'Derniers besoins'}
             </h2>
             {filtre && (
               <button onClick={() => setFiltre(null)} className="text-xs text-gray-400 hover:text-gray-600 underline">
