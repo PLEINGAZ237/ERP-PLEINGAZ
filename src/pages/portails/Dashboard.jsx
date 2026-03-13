@@ -2,7 +2,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 
-// Modules statiques — le `code` doit correspondre au `modules.code` en base
 const ALL_MODULES = [
   {
     code: "besoins",
@@ -42,7 +41,10 @@ const ALL_MODULES = [
 ];
 
 export default function PortailDashboard() {
-  const { user, profile, signOut, hasRole, getAccessibleModules } = useAuth();
+  const {
+    user, profile, signOut, hasRole,
+    getAccessibleModules, serviceRoles, serviceRolesLoaded,
+  } = useAuth();
   const navigate = useNavigate();
   const [hoveredId, setHoveredId] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -64,22 +66,31 @@ export default function PortailDashboard() {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Bonjour" : hour < 18 ? "Bon après-midi" : "Bonsoir";
 
-  // Modules auxquels l'utilisateur a accès via son service
-  const accessibleModuleCodes = getAccessibleModules().map(m => m.code);
   const isAdmin = hasRole('Admin');
+  const noService = !isAdmin && !profile?.service_id;
 
-  // Préparer la liste de modules à afficher
+  // Calculer les modules accessibles
+  const accessibleModules = getAccessibleModules();
+  const accessibleModuleCodes = accessibleModules.map(m => m.code?.toLowerCase());
+
+  // DEBUG — à retirer après résolution
+  console.log('🖥️ DASHBOARD RENDER:', {
+    serviceRolesLoaded,
+    serviceRoles: JSON.stringify(serviceRoles),
+    accessibleModuleCodes,
+    isAdmin,
+    service_id: profile?.service_id,
+  });
+
   const modules = ALL_MODULES.map(mod => {
-    // L'admin a accès à tous les modules développés
-    // Sinon, vérifier si le module est dans les modules accessibles via le service
-    const hasAccess = isAdmin || accessibleModuleCodes.includes(mod.code);
+    const hasAccess = isAdmin || accessibleModuleCodes.includes(mod.code.toLowerCase());
     const active = mod.developed && hasAccess;
-
     return { ...mod, active, hasAccess };
   });
 
-  // Message si l'utilisateur n'a pas de service
-  const noService = !isAdmin && !profile?.service_id;
+  // Si les rôles service ne sont pas encore chargés, afficher un loader
+  // au lieu de montrer "Non attribué" prématurément
+  const showModuleLoader = !serviceRolesLoaded && !isAdmin && profile?.service_id;
 
   return (
     <div style={styles.root}>
@@ -87,7 +98,6 @@ export default function PortailDashboard() {
       <div style={styles.orb1} />
       <div style={styles.orb2} />
 
-      {/* ── NAVBAR ── */}
       <nav style={styles.nav}>
         <div style={styles.navInner}>
           <div style={styles.navLogo}>
@@ -140,7 +150,6 @@ export default function PortailDashboard() {
         </div>
       </nav>
 
-      {/* ── HERO ── */}
       <main style={styles.main}>
         <div style={styles.heroSection}>
           <div style={styles.heroBadge}>
@@ -159,7 +168,6 @@ export default function PortailDashboard() {
           </p>
         </div>
 
-        {/* ── Alerte si pas de service ── */}
         {noService && (
           <div style={styles.alertBox}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2">
@@ -169,82 +177,92 @@ export default function PortailDashboard() {
               <strong>Aucun service attribué</strong>
               <p style={{ fontSize: "13px", color: "#92400e", marginTop: "4px" }}>
                 Votre administrateur doit vous affecter un service pour accéder aux modules.
-                Les modules ci-dessous sont affichés à titre indicatif.
               </p>
             </div>
           </div>
         )}
 
-        {/* ── MODULES GRID ── */}
         <div style={styles.sectionLabel}>
           <div style={styles.sectionLine} />
           <span>Modules disponibles</span>
           <div style={styles.sectionLine} />
         </div>
 
-        <div style={styles.grid2}>
-          {modules.map((mod, i) => (
-            <div
-              key={mod.code}
-              style={{
-                ...styles.moduleCard,
-                ...(mod.active ? styles.moduleCardActive : styles.moduleCardDisabled),
-                ...(hoveredId === mod.code && mod.active ? styles.moduleCardHover : {}),
-                animationDelay: `${i * 0.1}s`,
-              }}
-              onMouseEnter={() => setHoveredId(mod.code)}
-              onMouseLeave={() => setHoveredId(null)}
-              onClick={() => mod.active && mod.route && navigate(mod.route)}
-            >
-              {mod.active && hoveredId === mod.code && <div style={styles.cardAccent} />}
+        {showModuleLoader ? (
+          <div style={{ textAlign: "center", padding: "60px 0" }}>
+            <div style={{
+              width: "32px", height: "32px", margin: "0 auto 12px",
+              border: "3px solid #e5e7eb", borderTopColor: "#3b82f6",
+              borderRadius: "50%", animation: "spin 0.7s linear infinite",
+            }} />
+            <p style={{ color: "#999", fontSize: "14px" }}>Chargement de vos accès...</p>
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          </div>
+        ) : (
+          <div style={styles.grid2}>
+            {modules.map((mod, i) => (
+              <div
+                key={mod.code}
+                style={{
+                  ...styles.moduleCard,
+                  ...(mod.active ? styles.moduleCardActive : styles.moduleCardDisabled),
+                  ...(hoveredId === mod.code && mod.active ? styles.moduleCardHover : {}),
+                  animationDelay: `${i * 0.1}s`,
+                }}
+                onMouseEnter={() => setHoveredId(mod.code)}
+                onMouseLeave={() => setHoveredId(null)}
+                onClick={() => mod.active && mod.route && navigate(mod.route)}
+              >
+                {mod.active && hoveredId === mod.code && <div style={styles.cardAccent} />}
 
-              <div style={styles.cardHeader}>
-                <div style={{
-                  ...styles.cardIconWrap,
-                  ...(mod.active ? styles.cardIconActive : styles.cardIconDisabled),
-                }}>
-                  <span style={{ fontSize: "24px" }}>{mod.icon}</span>
+                <div style={styles.cardHeader}>
+                  <div style={{
+                    ...styles.cardIconWrap,
+                    ...(mod.active ? styles.cardIconActive : styles.cardIconDisabled),
+                  }}>
+                    <span style={{ fontSize: "24px" }}>{mod.icon}</span>
+                  </div>
+                  {mod.active ? (
+                    <div style={styles.activeBadge}>
+                      <span style={styles.activeDot} />
+                      Actif
+                    </div>
+                  ) : !mod.developed ? (
+                    <div style={styles.soonBadge}>{mod.badge}</div>
+                  ) : (
+                    <div style={styles.noAccessBadge}>Non attribué</div>
+                  )}
                 </div>
+
+                <h3 style={{ ...styles.cardTitle, color: mod.active ? "#111" : "#aaa" }}>{mod.title}</h3>
+                <p style={{ ...styles.cardDesc, color: mod.active ? "#777" : "#bbb" }}>{mod.desc}</p>
+
                 {mod.active ? (
-                  <div style={styles.activeBadge}>
-                    <span style={styles.activeDot} />
-                    Actif
+                  <div style={{ ...styles.cardCta, opacity: hoveredId === mod.code ? 1 : 0.6 }}>
+                    Accéder au module
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff0000" strokeWidth="2.5">
+                      <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                    </svg>
                   </div>
                 ) : !mod.developed ? (
-                  <div style={styles.soonBadge}>{mod.badge}</div>
+                  <div style={styles.cardLocked}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2">
+                      <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    En développement
+                  </div>
                 ) : (
-                  <div style={styles.noAccessBadge}>Non attribué</div>
+                  <div style={styles.cardLocked}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                    </svg>
+                    Non attribué à votre service
+                  </div>
                 )}
               </div>
-
-              <h3 style={{ ...styles.cardTitle, color: mod.active ? "#111" : "#aaa" }}>{mod.title}</h3>
-              <p style={{ ...styles.cardDesc, color: mod.active ? "#777" : "#bbb" }}>{mod.desc}</p>
-
-              {mod.active ? (
-                <div style={{ ...styles.cardCta, opacity: hoveredId === mod.code ? 1 : 0.6 }}>
-                  Accéder au module
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff0000" strokeWidth="2.5">
-                    <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-                  </svg>
-                </div>
-              ) : !mod.developed ? (
-                <div style={styles.cardLocked}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2">
-                    <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                  </svg>
-                  En développement
-                </div>
-              ) : (
-                <div style={styles.cardLocked}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
-                  </svg>
-                  Non attribué à votre service
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </main>
 
       {menuOpen && <div style={styles.overlay} onClick={() => setMenuOpen(false)} />}
@@ -291,11 +309,11 @@ const styles = {
   heroTitle: { fontFamily: "'Syne', sans-serif", fontSize: "clamp(28px, 5vw, 44px)", fontWeight: 800, color: "#111", lineHeight: 1.2, marginBottom: "12px" },
   heroName: { color: "#ff0000" },
   heroSub: { fontSize: "16px", color: "#888" },
-  alertBox: { display: "flex", alignItems: "flex-start", gap: "12px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: "16px", padding: "16px 20px", marginBottom: "32px", animation: "fadeUp 0.5s 0.05s cubic-bezier(.16,1,.3,1) both", opacity: 0, animationFillMode: "forwards", fontSize: "14px", fontWeight: 600, color: "#92400e" },
-  sectionLabel: { display: "flex", alignItems: "center", gap: "16px", marginBottom: "28px", animation: "fadeUp 0.5s 0.1s cubic-bezier(.16,1,.3,1) both", opacity: 0, animationFillMode: "forwards", color: "#aaa", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.08em" },
+  alertBox: { display: "flex", alignItems: "flex-start", gap: "12px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: "16px", padding: "16px 20px", marginBottom: "32px", fontSize: "14px", fontWeight: 600, color: "#92400e" },
+  sectionLabel: { display: "flex", alignItems: "center", gap: "16px", marginBottom: "28px", color: "#aaa", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.08em" },
   sectionLine: { flex: 1, height: "1px", background: "rgba(0,0,0,0.07)" },
   grid2: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "18px" },
-  moduleCard: { position: "relative", borderRadius: "20px", padding: "28px 24px", cursor: "pointer", transition: "all 0.25s cubic-bezier(.16,1,.3,1)", animation: "fadeUp 0.5s cubic-bezier(.16,1,.3,1) both", overflow: "hidden" },
+  moduleCard: { position: "relative", borderRadius: "20px", padding: "28px 24px", cursor: "pointer", transition: "all 0.25s cubic-bezier(.16,1,.3,1)", overflow: "hidden" },
   moduleCardActive: { background: "#ffffff", border: "1.5px solid rgba(0,0,0,0.09)", boxShadow: "0 2px 12px rgba(0,0,0,0.05)" },
   moduleCardDisabled: { background: "#fafafa", border: "1.5px solid rgba(0,0,0,0.05)", cursor: "default" },
   moduleCardHover: { transform: "translateY(-4px)", boxShadow: "0 20px 60px rgba(255,0,0,0.10)", borderColor: "rgba(255,0,0,0.22)" },

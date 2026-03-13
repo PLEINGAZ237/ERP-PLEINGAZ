@@ -5,7 +5,6 @@ import { useAuth } from '@/contexts/AuthContext'
 const MODULE_CODE = 'besoins'
 
 // Priorité de redirection par rôle dans le module "besoins"
-// Les noms doivent correspondre à ceux dans la table `roles`
 const ROLE_REDIRECT = [
   { role: 'admin_besoins', path: '/besoins/admin' },
   { role: 'valide_dg',     path: '/besoins/dg' },
@@ -16,11 +15,14 @@ const ROLE_REDIRECT = [
 ]
 
 export default function BesoinsDashboard() {
-  const { roles, getModuleRoles, hasRole } = useAuth()
+  const { hasRole, getModuleRoles, serviceRolesLoaded } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
-    // Admin global (via utilisateur_roles) → accès admin besoins
+    // Ne pas décider tant que les rôles service ne sont pas chargés
+    if (!serviceRolesLoaded) return
+
+    // Admin global → admin besoins
     if (hasRole('Admin')) {
       navigate('/besoins/admin', { replace: true })
       return
@@ -28,20 +30,21 @@ export default function BesoinsDashboard() {
 
     // Rôles via service dans le module besoins
     const moduleRoles = getModuleRoles(MODULE_CODE)
+
     if (moduleRoles.length === 0) {
       // Pas d'accès au module besoins → retour portail
       navigate('/dashboard', { replace: true })
       return
     }
 
+    // Rediriger vers le dashboard correspondant au rôle le plus prioritaire
     const match = ROLE_REDIRECT.find(r => moduleRoles.includes(r.role))
     if (match) {
       navigate(match.path, { replace: true })
     } else {
-      // Rôle inconnu dans le module → retour portail
       navigate('/dashboard', { replace: true })
     }
-  }, [roles, getModuleRoles, hasRole, navigate])
+  }, [serviceRolesLoaded, hasRole, getModuleRoles, navigate])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
