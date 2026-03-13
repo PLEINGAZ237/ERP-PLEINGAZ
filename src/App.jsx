@@ -119,6 +119,7 @@ function App() {
           <Route path="/besoins/employe"              element={<ProtectedRoute module="besoins" moduleRoles={BESOINS_ALL}><EmployeDashboard /></ProtectedRoute>} />
           <Route path="/besoins/employe/creer-besoin" element={<ProtectedRoute module="besoins" moduleRoles={BESOINS_ALL}><CreerBesoin /></ProtectedRoute>} />
           <Route path="/besoins/employe/mes-besoins"  element={<ProtectedRoute module="besoins" moduleRoles={BESOINS_ALL}><MesBesoins /></ProtectedRoute>} />
+          <Route path="/besoins/employe/besoin/:id"   element={<ProtectedRoute module="besoins" moduleRoles={BESOINS_ALL}><DetailBesoin /></ProtectedRoute>} />
 
           {/* ── Besoins : DFC ─────────────────────────────────────── */}
           <Route path="/besoins/dfc"            element={<ProtectedRoute module="besoins" moduleRoles={['valide_dfc']}><DFCDashboard /></ProtectedRoute>} />
