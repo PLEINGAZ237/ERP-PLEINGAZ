@@ -1,5 +1,5 @@
-import AdminLayout from '@/components/besoins/admin/AdminLayout'
-import CrudTable   from '@/components/besoins/admin/CrudTable'
+import AdminLayout from '@/components/admin/AdminLayout'
+import CrudTable   from '@/components/admin/CrudTable'
 
 const COLUMNS = [
   { key: 'nom',           label: 'Nom',        required: true },

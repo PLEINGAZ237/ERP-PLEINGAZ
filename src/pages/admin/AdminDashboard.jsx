@@ -1,14 +1,16 @@
-import AdminLayout from '@/components/besoins/admin/AdminLayout'
+import AdminLayout from '@/components/admin/AdminLayout'
 import { Link } from 'react-router-dom'
 import {
   Building2,
   List,
   CreditCard,
   Landmark,
-  Warehouse, // Corrigé : majuscule ici
+  Warehouse,
   Fuel,
   Users,
   Settings,
+  Network,
+  Box,
 } from 'lucide-react'
 
 const CARDS = [
@@ -25,6 +27,18 @@ const CARDS = [
     color: 'text-purple-600',
   },
   {
+    label: 'Services',
+    path: '/admin/services',
+    icon: Network,
+    color: 'text-cyan-600',
+  },
+  {
+    label: 'Modules',
+    path: '/admin/modules',
+    icon: Box,
+    color: 'text-amber-600',
+  },
+  {
     label: 'Caisses',
     path: '/admin/caisses',
     icon: CreditCard,
@@ -39,7 +53,7 @@ const CARDS = [
   {
     label: 'Magasins',
     path: '/admin/magasins',
-    icon: Warehouse, // Corrigé : majuscule ici
+    icon: Warehouse,
     color: 'text-teal-600',
   },
   {
