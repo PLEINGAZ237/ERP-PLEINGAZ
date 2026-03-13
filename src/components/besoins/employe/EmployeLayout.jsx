@@ -61,7 +61,7 @@ export default function EmployeLayout({ children }) {
         <div className='p-6 border-b border-blue-800 hidden md:block'>
           <p className='font-bold text-lg tracking-tight'>MonPleinGaz</p>
           <p className='text-xs text-blue-300 uppercase tracking-widest mt-1'>
-            Émetteur de besoin
+            Espace d'émission de besoins
           </p>
         </div>
 

@@ -30,6 +30,7 @@ import Utilisateurs        from './pages/besoins/admin/Utilisateurs'
 import EmployeDashboard    from './pages/besoins/employe/EmployeDashboard'
 import CreerBesoin         from './pages/besoins/employe/CreerBesoin'
 import MesBesoins          from './pages/besoins/employe/MesBesoins'
+import DetailBesoin        from './pages/besoins/employe/DetailBesoin'
 
 // ── Module Besoins : DFC ─────────────────────────────────────────────────────
 import DFCDashboard        from './pages/besoins/dfc/DFCDashboard'
@@ -94,6 +95,7 @@ function App() {
           <Route path="/besoins/employe"              element={<ProtectedRoute roles={['Employe','DFC','DG','Caissiere','Justif']}><EmployeDashboard /></ProtectedRoute>} />
           <Route path="/besoins/employe/creer-besoin" element={<ProtectedRoute roles={['Employe','DFC','DG','Caissiere','Justif']}><CreerBesoin /></ProtectedRoute>} />
           <Route path="/besoins/employe/mes-besoins"  element={<ProtectedRoute roles={['Employe','DFC','DG','Caissiere','Justif']}><MesBesoins /></ProtectedRoute>} />
+          <Route path="/besoins/employe/besoin/:id"   element={<ProtectedRoute roles={['Employe','DFC','DG','Caissiere','Justif']}><DetailBesoin /></ProtectedRoute>} />
 
           {/* ── Module Besoins : DFC ─────────────────────────────── */}
           <Route path="/besoins/dfc"            element={<ProtectedRoute roles={['DFC']}><DFCDashboard /></ProtectedRoute>} />

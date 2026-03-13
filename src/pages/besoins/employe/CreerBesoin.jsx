@@ -67,7 +67,7 @@ export default function CreerBesoin() {
           <form onSubmit={handleSubmit} className='space-y-6'>
             <div>
               <label className='block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2'>
-                Description <span className='text-red-500'>*</span>
+                Titre <span className='text-red-500'>*</span>
               </label>
               <textarea
                 name='description'
@@ -102,7 +102,7 @@ export default function CreerBesoin() {
 
             <div>
               <label className='block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2'>
-                Justification <span className='text-red-500'>*</span>
+                Détails <span className='text-red-500'>*</span>
               </label>
               <textarea
                 name='justification'
