@@ -2,21 +2,28 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import DFCLayout from '@/components/besoins/dfc/DFCLayout'
+import { Loader2 } from 'lucide-react'
 
 const STATUT_STYLE = {
   EN_ATTENTE_DFC: 'bg-amber-100 text-amber-700',
   EN_ATTENTE_DG:  'bg-blue-100 text-blue-700',
   REJETE_DFC:     'bg-red-100 text-red-700',
-  VALIDE_DG:      'bg-green-100 text-green-700',
-  REJETE_DG:      'bg-red-200 text-red-900 border border-red-300',
+  VALIDE_DG:      'bg-emerald-100 text-emerald-700',
+  REJETE_DG:      'bg-red-200 text-red-900',
+  DECAISSE:       'bg-purple-100 text-purple-700',
+  EN_ATTENTE_RETOUR_CAISSE: 'bg-amber-100 text-amber-700',
+  BOUCLE:         'bg-gray-100 text-gray-500',
 }
 
 const STATUT_LABEL = {
   EN_ATTENTE_DFC: 'En attente DFC',
-  EN_ATTENTE_DG:  'Validé — En attente DG',
+  EN_ATTENTE_DG:  'En attente DG',
   REJETE_DFC:     'Rejeté DFC',
-  VALIDE_DG:      'Validé DG — En attente décaissement',
-  REJETE_DG:      'Rejeté par DG',
+  VALIDE_DG:      'Validé DG',
+  REJETE_DG:      'Rejeté DG',
+  DECAISSE:       'Décaissé',
+  EN_ATTENTE_RETOUR_CAISSE: 'Retour caisse',
+  BOUCLE:         'Bouclé',
 }
 
 const fmt = (n) => n != null ? Number(n).toLocaleString('fr-FR') + ' FCFA' : '—'
@@ -25,7 +32,7 @@ export default function DFCDashboard() {
   const navigate = useNavigate()
   const [besoins, setBesoins] = useState([])
   const [loading, setLoading] = useState(true)
-  const [filtre, setFiltre] = useState('TOUT')
+  const [filtre, setFiltre] = useState('EN_ATTENTE_DFC')
 
   useEffect(() => {
     const load = async () => {
@@ -39,7 +46,6 @@ export default function DFCDashboard() {
           validations_dg(montant_valide)
         `)
         .order('created_at', { ascending: false })
-
       if (data) setBesoins(data)
       setLoading(false)
     }
@@ -47,196 +53,127 @@ export default function DFCDashboard() {
   }, [])
 
   const stats = {
-    total:     besoins.length,
     enAttente: besoins.filter(b => b.statut === 'EN_ATTENTE_DFC').length,
     valide:    besoins.filter(b => ['EN_ATTENTE_DG', 'VALIDE_DG'].includes(b.statut)).length,
     rejete:    besoins.filter(b => ['REJETE_DFC', 'REJETE_DG'].includes(b.statut)).length,
   }
 
-  // ── Tableau "À traiter" ── montant demandé
-  const TableATraiter = ({ data }) => (
-    <div className="bg-white rounded-xl shadow mb-6 overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-4 border-b">
-        <h2 className="font-semibold text-gray-700">À traiter</h2>
-        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700">{data.length}</span>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="text-left px-4 py-3 font-semibold text-gray-500">Numéro</th>
-              <th className="text-left px-4 py-3 font-semibold text-gray-500">Employé</th>
-              <th className="text-left px-4 py-3 font-semibold text-gray-500">Département</th>
-              <th className="text-left px-4 py-3 font-semibold text-gray-500">Description</th>
-              <th className="text-left px-4 py-3 font-semibold text-gray-500">Montant demandé</th>
-              <th className="text-left px-4 py-3 font-semibold text-gray-500">Date</th>
-              <th className="text-right px-4 py-3 font-semibold text-gray-500">Statut</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map(b => (
-              <tr key={b.id} className="border-b hover:bg-gray-50 cursor-pointer"
-                onClick={() => navigate(`/besoins/dfc/besoin/${b.id}`)}>
-                <td className="px-4 py-3 font-mono text-xs text-gray-600">{b.numero}</td>
-                <td className="px-4 py-3 font-medium text-gray-700">{b.profiles?.prenom} {b.profiles?.nom}</td>
-                <td className="px-4 py-3 text-gray-500">{b.profiles?.departements?.nom ?? '-'}</td>
-                <td className="px-4 py-3 text-gray-600 max-w-xs truncate">{b.description}</td>
-                <td className="px-4 py-3 text-gray-700 whitespace-nowrap">{fmt(b.montant_demande)}</td>
-                <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">
-                  {new Date(b.created_at).toLocaleDateString('fr-FR')}
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <span className={`px-2 py-1 rounded-full text-[10px] font-bold whitespace-nowrap ${STATUT_STYLE[b.statut]}`}>
-                    {STATUT_LABEL[b.statut]}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  )
+  const filteredBesoins = besoins.filter(b => {
+    if (filtre === 'EN_ATTENTE_DFC') return b.statut === 'EN_ATTENTE_DFC'
+    if (filtre === 'VALIDES') return ['EN_ATTENTE_DG', 'VALIDE_DG'].includes(b.statut)
+    if (filtre === 'REJETES') return ['REJETE_DFC', 'REJETE_DG'].includes(b.statut)
+    return true
+  })
 
-  // ── Tableau "Suivi des validés" ── montant validé (DG si VALIDE_DG, sinon DFC)
-  const TableValides = ({ data }) => (
-    <div className="bg-white rounded-xl shadow mb-6 overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-4 border-b">
-        <h2 className="font-semibold text-gray-700">Suivi des validés</h2>
-        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-700">{data.length}</span>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="text-left px-4 py-3 font-semibold text-gray-500">Numéro</th>
-              <th className="text-left px-4 py-3 font-semibold text-gray-500">Employé</th>
-              <th className="text-left px-4 py-3 font-semibold text-gray-500">Département</th>
-              <th className="text-left px-4 py-3 font-semibold text-gray-500">Description</th>
-              <th className="text-left px-4 py-3 font-semibold text-gray-500">Montant validé</th>
-              <th className="text-left px-4 py-3 font-semibold text-gray-500">Date</th>
-              <th className="text-right px-4 py-3 font-semibold text-gray-500">Statut</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map(b => {
-              // Si VALIDE_DG → montant DG, sinon (EN_ATTENTE_DG) → montant DFC
-              const montantValide = b.statut === 'VALIDE_DG'
-                ? b.validations_dg?.[b.validations_dg.length - 1]?.montant_valide
-                : b.validations_dfc?.[b.validations_dfc.length - 1]?.montant_valide
-              return (
-                <tr key={b.id} className="border-b hover:bg-gray-50 cursor-pointer"
-                  onClick={() => navigate(`/besoins/dfc/besoin/${b.id}`)}>
-                  <td className="px-4 py-3 font-mono text-xs text-gray-600">{b.numero}</td>
-                  <td className="px-4 py-3 font-medium text-gray-700">{b.profiles?.prenom} {b.profiles?.nom}</td>
-                  <td className="px-4 py-3 text-gray-500">{b.profiles?.departements?.nom ?? '-'}</td>
-                  <td className="px-4 py-3 text-gray-600 max-w-xs truncate">{b.description}</td>
-                  <td className="px-4 py-3 text-gray-700 whitespace-nowrap">{fmt(montantValide)}</td>
-                  <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">
-                    {new Date(b.created_at).toLocaleDateString('fr-FR')}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <span className={`px-2 py-1 rounded-full text-[10px] font-bold whitespace-nowrap ${STATUT_STYLE[b.statut]}`}>
-                      {STATUT_LABEL[b.statut]}
-                    </span>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  )
+  const getMontant = (b) => {
+    if (filtre === 'VALIDES') {
+      return b.statut === 'VALIDE_DG'
+        ? b.validations_dg?.[b.validations_dg.length - 1]?.montant_valide
+        : b.validations_dfc?.[b.validations_dfc.length - 1]?.montant_valide
+    }
+    return b.montant_demande
+  }
 
-  // ── Tableau "Rejetés" ── montant rejeté = montant validé par DFC
-  const TableRejetes = ({ data }) => (
-    <div className="bg-white rounded-xl shadow mb-6 overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-4 border-b">
-        <h2 className="font-semibold text-gray-700">Rejetés</h2>
-        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">{data.length}</span>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="text-left px-4 py-3 font-semibold text-gray-500">Numéro</th>
-              <th className="text-left px-4 py-3 font-semibold text-gray-500">Employé</th>
-              <th className="text-left px-4 py-3 font-semibold text-gray-500">Département</th>
-              <th className="text-left px-4 py-3 font-semibold text-gray-500">Description</th>
-              <th className="text-left px-4 py-3 font-semibold text-gray-500">Montant rejeté</th>
-              <th className="text-left px-4 py-3 font-semibold text-gray-500">Date</th>
-              <th className="text-right px-4 py-3 font-semibold text-gray-500">Statut</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map(b => {
-              const montantRejete = b.montant_demande
-              return (
-                <tr key={b.id} className="border-b hover:bg-gray-50 cursor-pointer"
-                  onClick={() => navigate(`/besoins/dfc/besoin/${b.id}`)}>
-                  <td className="px-4 py-3 font-mono text-xs text-gray-600">{b.numero}</td>
-                  <td className="px-4 py-3 font-medium text-gray-700">{b.profiles?.prenom} {b.profiles?.nom}</td>
-                  <td className="px-4 py-3 text-gray-500">{b.profiles?.departements?.nom ?? '-'}</td>
-                  <td className="px-4 py-3 text-gray-600 max-w-xs truncate">{b.description}</td>
-                  <td className="px-4 py-3 text-gray-700 whitespace-nowrap">{fmt(montantRejete)}</td>
-                  <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">
-                    {new Date(b.created_at).toLocaleDateString('fr-FR')}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <span className={`px-2 py-1 rounded-full text-[10px] font-bold whitespace-nowrap ${STATUT_STYLE[b.statut]}`}>
-                      {STATUT_LABEL[b.statut]}
-                    </span>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  )
+  const montantLabel = filtre === 'VALIDES' ? 'Montant validé' : filtre === 'REJETES' ? 'Montant demandé' : 'Montant demandé'
+
+  const STATS_CARDS = [
+    { key: 'EN_ATTENTE_DFC', label: 'À traiter', value: stats.enAttente, color: 'amber' },
+    { key: 'VALIDES', label: 'Validés', value: stats.valide, color: 'blue' },
+    { key: 'REJETES', label: 'Rejetés', value: stats.rejete, color: 'red' },
+  ]
 
   return (
     <DFCLayout>
-      <div className="p-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">Tableau de bord DFC</h1>
+      <h1 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Tableau de bord DFC</h1>
+      <p className="text-sm text-gray-400 mb-6">Validation et suivi des besoins.</p>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div onClick={() => setFiltre('TOUT')} className={`p-4 rounded-xl shadow bg-white border-2 cursor-pointer transition-all ${filtre === 'TOUT' ? 'border-indigo-600' : 'border-transparent'}`}>
-            <p className="text-gray-500 text-xs font-bold uppercase">Total</p>
-            <p className="text-2xl font-bold">{stats.total}</p>
+      {/* Stats cards */}
+      <div className="grid grid-cols-3 gap-3 md:gap-4 mb-6">
+        {STATS_CARDS.map(c => (
+          <div
+            key={c.key}
+            onClick={() => setFiltre(c.key)}
+            className={`p-3 md:p-4 rounded-xl shadow-sm bg-white border-2 cursor-pointer transition-all ${
+              filtre === c.key ? `border-${c.color}-500 ring-2 ring-${c.color}-500/20` : 'border-transparent hover:border-gray-200'
+            }`}
+          >
+            <p className={`text-${c.color}-600 text-[10px] md:text-xs font-bold uppercase`}>{c.label}</p>
+            <p className="text-xl md:text-2xl font-bold text-gray-800 mt-1">{c.value}</p>
           </div>
-          <div onClick={() => setFiltre('EN_ATTENTE_DFC')} className={`p-4 rounded-xl shadow bg-white border-2 cursor-pointer transition-all ${filtre === 'EN_ATTENTE_DFC' ? 'border-amber-600' : 'border-transparent'}`}>
-            <p className="text-amber-600 text-xs font-bold uppercase">À traiter</p>
-            <p className="text-2xl font-bold">{stats.enAttente}</p>
+        ))}
+      </div>
+
+      {/* Liste */}
+      {loading ? (
+        <div className="flex flex-col items-center py-20 text-gray-400">
+          <Loader2 className="animate-spin mb-2" />
+          <p className="text-sm">Chargement...</p>
+        </div>
+      ) : filteredBesoins.length === 0 ? (
+        <p className="text-gray-400 text-sm text-center py-12">Aucun besoin dans cette catégorie.</p>
+      ) : (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="flex items-center justify-between px-4 md:px-5 py-3 border-b">
+            <h2 className="font-semibold text-gray-700 text-sm">
+              {filtre === 'EN_ATTENTE_DFC' ? 'À traiter' : filtre === 'VALIDES' ? 'Validés / Suivi' : 'Rejetés'}
+            </h2>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+              filtre === 'EN_ATTENTE_DFC' ? 'bg-amber-100 text-amber-700' :
+              filtre === 'VALIDES' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'
+            }`}>{filteredBesoins.length}</span>
           </div>
-          <div onClick={() => setFiltre('VALIDES')} className={`p-4 rounded-xl shadow bg-white border-2 cursor-pointer transition-all ${filtre === 'VALIDES' ? 'border-blue-600' : 'border-transparent'}`}>
-            <p className="text-blue-600 text-xs font-bold uppercase">Validés / Suivi</p>
-            <p className="text-2xl font-bold">{stats.valide}</p>
+
+          {/* Mobile cards */}
+          <div className="md:hidden divide-y divide-gray-50">
+            {filteredBesoins.map(b => (
+              <div key={b.id} onClick={() => navigate(`/besoins/dfc/besoin/${b.id}`)} className="p-4 active:bg-gray-50 cursor-pointer">
+                <div className="flex justify-between items-start mb-1">
+                  <p className="font-mono text-xs text-emerald-600 font-medium">{b.numero}</p>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${STATUT_STYLE[b.statut] ?? ''}`}>
+                    {STATUT_LABEL[b.statut] ?? b.statut}
+                  </span>
+                </div>
+                <p className="text-sm font-medium text-gray-800">{b.profiles?.prenom} {b.profiles?.nom}</p>
+                <p className="text-xs text-gray-500 truncate">{b.description}</p>
+                <div className="flex justify-between mt-2">
+                  <p className="text-sm font-bold">{fmt(getMontant(b))}</p>
+                  <p className="text-[10px] text-gray-400">{new Date(b.created_at).toLocaleDateString('fr-FR')}</p>
+                </div>
+              </div>
+            ))}
           </div>
-          <div onClick={() => setFiltre('REJETES')} className={`p-4 rounded-xl shadow bg-white border-2 cursor-pointer transition-all ${filtre === 'REJETES' ? 'border-red-600' : 'border-transparent'}`}>
-            <p className="text-red-600 text-xs font-bold uppercase">Rejetés</p>
-            <p className="text-2xl font-bold">{stats.rejete}</p>
+
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  {['Numéro', 'Employé', 'Département', 'Description', montantLabel, 'Date', 'Statut'].map(h => (
+                    <th key={h} className="text-left px-4 py-3 font-semibold text-gray-500 text-xs uppercase">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {filteredBesoins.map(b => (
+                  <tr key={b.id} className="hover:bg-gray-50/50 cursor-pointer transition-colors" onClick={() => navigate(`/besoins/dfc/besoin/${b.id}`)}>
+                    <td className="px-4 py-3 font-mono text-xs text-emerald-600">{b.numero}</td>
+                    <td className="px-4 py-3 font-medium text-gray-700">{b.profiles?.prenom} {b.profiles?.nom}</td>
+                    <td className="px-4 py-3 text-gray-500">{b.profiles?.departements?.nom ?? '-'}</td>
+                    <td className="px-4 py-3 text-gray-600 max-w-[200px] truncate">{b.description}</td>
+                    <td className="px-4 py-3 font-bold whitespace-nowrap">{fmt(getMontant(b))}</td>
+                    <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">{new Date(b.created_at).toLocaleDateString('fr-FR')}</td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-1 rounded-full text-[10px] font-bold whitespace-nowrap ${STATUT_STYLE[b.statut] ?? ''}`}>
+                        {STATUT_LABEL[b.statut] ?? b.statut}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
-
-        {loading ? (
-          <p className="text-gray-400 text-center py-10 italic">Chargement...</p>
-        ) : (
-          <div className="space-y-2">
-            {(filtre === 'TOUT' || filtre === 'EN_ATTENTE_DFC') && (
-              <TableATraiter data={besoins.filter(b => b.statut === 'EN_ATTENTE_DFC')} />
-            )}
-            {(filtre === 'TOUT' || filtre === 'VALIDES') && (
-              <TableValides data={besoins.filter(b => ['EN_ATTENTE_DG', 'VALIDE_DG'].includes(b.statut))} />
-            )}
-            {(filtre === 'TOUT' || filtre === 'REJETES') && (
-              <TableRejetes data={besoins.filter(b => ['REJETE_DFC', 'REJETE_DG'].includes(b.statut))} />
-            )}
-          </div>
-        )}
-      </div>
+      )}
     </DFCLayout>
   )
 }
