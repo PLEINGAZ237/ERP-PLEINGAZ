@@ -40,7 +40,7 @@ export function AuthProvider({ children }) {
     setServiceRolesLoaded(false)
     const { data } = await supabase
       .from('profiles')
-      .select('*, entreprises(nom), departements(nom), services(nom)')
+      .select('*, entreprises(nom), departements(nom), services(nom), caisses(nom)')
       .eq('id', userId)
       .single()
     setProfile(data)
