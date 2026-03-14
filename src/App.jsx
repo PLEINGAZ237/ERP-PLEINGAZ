@@ -111,6 +111,7 @@ function App() {
           {/* ── Besoins : DFC ─────────────────────────────────────── */}
           <Route path="/besoins/dfc"            element={<ProtectedRoute module="besoins" moduleRoles={['DFC']}><DFCDashboard /></ProtectedRoute>} />
           <Route path="/besoins/dfc/besoin/:id" element={<ProtectedRoute module="besoins" moduleRoles={['DFC']}><ValiderBesoin /></ProtectedRoute>} />
+          <Route path="/besoins/dfc/analyse"    element={<ProtectedRoute module="besoins" moduleRoles={['DFC']}><AnalyseBesoins layout="dfc" /></ProtectedRoute>} />
 
           {/* ── Besoins : DG ──────────────────────────────────────── */}
           <Route path="/besoins/dg"             element={<ProtectedRoute module="besoins" moduleRoles={['DG', 'analyse_besoin']}><DGDashboard /></ProtectedRoute>} />

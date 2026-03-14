@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 import AdminLayout from '@/components/admin/AdminLayout'
-import { Search, Link as LinkIcon } from 'lucide-react'
+import { Search, Link as LinkIcon, Wallet } from 'lucide-react'
 
 const EXCEPTIONS_EMAIL = ['blkenfack@hotmail.com']
 
@@ -15,7 +15,8 @@ export default function Utilisateurs() {
   const [entreprises, setEntreprises]   = useState([])
   const [departements, setDepartements] = useState([])
   const [services, setServices]         = useState([])
-  const [serviceRolesMap, setServiceRolesMap] = useState({}) // service_id → [{role_nom, module_nom}]
+  const [caisses, setCaisses]           = useState([])
+  const [serviceRolesMap, setServiceRolesMap] = useState({})
   const [adminRoleId, setAdminRoleId]   = useState(null)
   const [loading, setLoading]           = useState(true)
   const [showCreate, setShowCreate]     = useState(false)
@@ -28,7 +29,7 @@ export default function Utilisateurs() {
   const [createForm, setCreateForm] = useState({ email: '', password: '' })
 
   const [editForm, setEditForm] = useState({
-    nom: '', prenom: '', entreprise_id: '', departement_id: '', service_id: '', isAdmin: false,
+    nom: '', prenom: '', entreprise_id: '', departement_id: '', service_id: '', isAdmin: false, caisse_id: '',
   })
 
   const load = async () => {
@@ -40,22 +41,22 @@ export default function Utilisateurs() {
       { data: svcs },
       { data: srmData },
       { data: roles },
+      { data: caissesData },
     ] = await Promise.all([
       supabase
         .from('profiles')
-        .select('*, entreprises(nom), departements(nom), services(nom), utilisateur_roles(role_id, roles(nom))')
+        .select('*, entreprises(nom), departements(nom), services(nom), caisses(nom), utilisateur_roles(role_id, roles(nom))')
         .order('created_at', { ascending: false }),
       supabase.from('entreprises').select('id, nom'),
       supabase.from('departements').select('id, nom'),
       supabase.from('services').select('id, nom, departement_id').eq('statut', 'actif'),
-      // Charger TOUTES les associations service→rôle→module
       supabase
         .from('service_role_module')
         .select('service_id, roles(nom), modules(nom, code)'),
       supabase.from('roles').select('id, nom'),
+      supabase.from('caisses').select('id, nom').eq('statut', 'actif').order('nom'),
     ])
 
-    // Construire la map service_id → [{role_nom, module_nom, module_code}]
     const map = {}
     ;(srmData ?? []).forEach((row) => {
       const sid = row.service_id
@@ -68,7 +69,6 @@ export default function Utilisateurs() {
     })
     setServiceRolesMap(map)
 
-    // Trouver l'id du rôle Admin
     const adminRole = (roles ?? []).find((r) => r.nom === 'Admin')
     setAdminRoleId(adminRole?.id ?? null)
 
@@ -76,6 +76,7 @@ export default function Utilisateurs() {
     setEntreprises(ents ?? [])
     setDepartements(depts ?? [])
     setServices(svcs ?? [])
+    setCaisses(caissesData ?? [])
     setLoading(false)
   }
 
@@ -92,12 +93,13 @@ export default function Utilisateurs() {
       const ent     = u.entreprises?.nom?.toLowerCase() ?? ''
       const dept    = u.departements?.nom?.toLowerCase() ?? ''
       const svc     = u.services?.nom?.toLowerCase() ?? ''
+      const caisse  = u.caisses?.nom?.toLowerCase() ?? ''
       const directRoles = (u.utilisateur_roles ?? []).map((ur) => ur.roles?.nom ?? '').join(' ').toLowerCase()
       const svcRoles = (serviceRolesMap[u.service_id] ?? []).map((r) => r.role_nom).join(' ').toLowerCase()
       return (
         email.includes(q) || nom.includes(q) || prenom.includes(q) ||
         ent.includes(q) || dept.includes(q) || svc.includes(q) ||
-        directRoles.includes(q) || svcRoles.includes(q)
+        caisse.includes(q) || directRoles.includes(q) || svcRoles.includes(q)
       )
     })
   }, [users, search, serviceRolesMap])
@@ -110,6 +112,11 @@ export default function Utilisateurs() {
   /* ── Rôles hérités du service sélectionné dans le formulaire ─ */
   const previewServiceRoles = serviceRolesMap[editForm.service_id] ?? []
 
+  /* ── Le service sélectionné donne-t-il le rôle "decaissement" ? ── */
+  const serviceHasDecaissement = previewServiceRoles.some(
+    (r) => r.role_nom === 'decaissement' && r.module_code === 'besoins'
+  )
+
   /* ── Helpers pour afficher les rôles d'un user ──────────── */
   const getUserDirectRoles = (user) =>
     (user.utilisateur_roles ?? []).map((ur) => ur.roles?.nom).filter(Boolean)
@@ -119,6 +126,12 @@ export default function Utilisateurs() {
 
   const isUserAdmin = (user) =>
     getUserDirectRoles(user).includes('Admin')
+
+  /* ── Un user a-t-il le rôle decaissement ? ──────────────── */
+  const userHasDecaissement = (user) =>
+    (serviceRolesMap[user.service_id] ?? []).some(
+      (r) => r.role_nom === 'decaissement' && r.module_code === 'besoins'
+    )
 
   // --- CRÉER UN UTILISATEUR ---
   const handleCreate = async (e) => {
@@ -149,6 +162,7 @@ export default function Utilisateurs() {
       departement_id: user.departement_id ?? '',
       service_id:     user.service_id ?? '',
       isAdmin:        isUserAdmin(user),
+      caisse_id:      user.caisse_id ?? '',
     })
     setError('')
     setShowEdit(true)
@@ -158,9 +172,20 @@ export default function Utilisateurs() {
   const handleEdit = async (e) => {
     e.preventDefault()
     setError('')
+
+    // Vérification : si decaissement → caisse obligatoire
+    const futureServiceRoles = serviceRolesMap[editForm.service_id] ?? []
+    const willBeDecaissement = futureServiceRoles.some(
+      (r) => r.role_nom === 'decaissement' && r.module_code === 'besoins'
+    )
+    if (willBeDecaissement && !editForm.caisse_id) {
+      setError('Ce service inclut le rôle "decaissement" : vous devez sélectionner une caisse.')
+      return
+    }
+
     setSaving(true)
 
-    // 1. Mettre à jour le profil
+    // 1. Mettre à jour le profil (caisse_id inclus)
     const { error: profileError } = await supabase
       .from('profiles')
       .update({
@@ -169,6 +194,7 @@ export default function Utilisateurs() {
         entreprise_id:  editForm.entreprise_id || null,
         departement_id: editForm.departement_id || null,
         service_id:     editForm.service_id || null,
+        caisse_id:      willBeDecaissement ? editForm.caisse_id : null,
       })
       .eq('id', selected.id)
 
@@ -195,9 +221,22 @@ export default function Utilisateurs() {
     load()
   }
 
-  // --- Changement de département → réinitialise le service ---
+  // --- Changement de département → réinitialise le service et la caisse ---
   const handleDepartementChange = (value) => {
-    setEditForm((f) => ({ ...f, departement_id: value, service_id: '' }))
+    setEditForm((f) => ({ ...f, departement_id: value, service_id: '', caisse_id: '' }))
+  }
+
+  // --- Changement de service → réinitialise la caisse si plus decaissement ---
+  const handleServiceChange = (value) => {
+    const newServiceRoles = serviceRolesMap[value] ?? []
+    const hasDecaiss = newServiceRoles.some(
+      (r) => r.role_nom === 'decaissement' && r.module_code === 'besoins'
+    )
+    setEditForm((f) => ({
+      ...f,
+      service_id: value,
+      caisse_id: hasDecaiss ? f.caisse_id : '',
+    }))
   }
 
   return (
@@ -220,7 +259,7 @@ export default function Utilisateurs() {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Rechercher par email, nom, service, rôle..."
+          placeholder="Rechercher par email, nom, service, rôle, caisse..."
           className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none shadow-sm"
         />
       </div>
@@ -259,19 +298,24 @@ export default function Utilisateurs() {
                     <td className="px-4 py-3">{user.services?.nom ?? '-'}</td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
-                        {/* Rôles directs (Admin) */}
                         {directRoles.map((r) => (
                           <span key={`d-${r}`} className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200">
                             {r}
                           </span>
                         ))}
-                        {/* Rôles hérités du service */}
                         {svcRoles.map((r, i) => (
                           <span key={`s-${i}`} className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
                             <LinkIcon size={8} />
                             {r.role_nom} → {r.module_nom}
                           </span>
                         ))}
+                        {/* Badge caisse si decaissement */}
+                        {userHasDecaissement(user) && user.caisses?.nom && (
+                          <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                            <Wallet size={8} />
+                            {user.caisses.nom}
+                          </span>
+                        )}
                         {directRoles.length === 0 && svcRoles.length === 0 && (
                           <span className="text-gray-300 text-xs italic">Aucun rôle</span>
                         )}
@@ -387,7 +431,7 @@ export default function Utilisateurs() {
                 <label className="block text-sm font-medium mb-1">Service</label>
                 <select
                   value={editForm.service_id}
-                  onChange={e => setEditForm({ ...editForm, service_id: e.target.value })}
+                  onChange={e => handleServiceChange(e.target.value)}
                   className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                     !editForm.departement_id ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
@@ -424,6 +468,28 @@ export default function Utilisateurs() {
                   )}
                   <p className="text-[10px] text-blue-400 mt-2">
                     Ces rôles sont automatiquement attribués. L'utilisateur aura accès aux modules correspondants.
+                  </p>
+                </div>
+              )}
+
+              {/* ── Caisse — visible uniquement si decaissement ── */}
+              {serviceHasDecaissement && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                  <label className="flex items-center gap-1.5 text-xs font-bold text-amber-700 uppercase mb-2">
+                    <Wallet size={14} />
+                    Caisse associée <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={editForm.caisse_id}
+                    onChange={e => setEditForm({ ...editForm, caisse_id: e.target.value })}
+                    className="w-full border border-amber-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400"
+                    required
+                  >
+                    <option value="">Sélectionner une caisse...</option>
+                    {caisses.map(c => <option key={c.id} value={c.id}>{c.nom}</option>)}
+                  </select>
+                  <p className="text-[10px] text-amber-600 mt-1.5">
+                    Ce service inclut le rôle « decaissement ». Vous devez associer une caisse à cet utilisateur.
                   </p>
                 </div>
               )}
