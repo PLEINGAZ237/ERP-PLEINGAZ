@@ -76,10 +76,29 @@ export default function DFCDashboard() {
 
   const montantLabel = filtre === 'VALIDES' ? 'Montant validé' : filtre === 'REJETES' ? 'Montant demandé' : 'Montant demandé'
 
+  // Mapping des styles pour éviter les classes dynamiques cassées
   const STATS_CARDS = [
-    { key: 'EN_ATTENTE_DFC', label: 'À traiter', value: stats.enAttente, color: 'amber' },
-    { key: 'VALIDES', label: 'Validés', value: stats.valide, color: 'blue' },
-    { key: 'REJETES', label: 'Rejetés', value: stats.rejete, color: 'red' },
+    { 
+      key: 'EN_ATTENTE_DFC', 
+      label: 'À traiter', 
+      value: stats.enAttente, 
+      border: 'border-amber-500 ring-amber-500/20',
+      text: 'text-amber-600'
+    },
+    { 
+      key: 'VALIDES', 
+      label: 'Validés', 
+      value: stats.valide, 
+      border: 'border-green-500 ring-green-500/20',
+      text: 'text-green-600'
+    },
+    { 
+      key: 'REJETES', 
+      label: 'Rejetés', 
+      value: stats.rejete, 
+      border: 'border-red-500 ring-red-500/20',
+      text: 'text-red-600'
+    },
   ]
 
   return (
@@ -94,10 +113,10 @@ export default function DFCDashboard() {
             key={c.key}
             onClick={() => setFiltre(c.key)}
             className={`p-3 md:p-4 rounded-xl shadow-sm bg-white border-2 cursor-pointer transition-all ${
-              filtre === c.key ? `border-${c.color}-500 ring-2 ring-${c.color}-500/20` : 'border-transparent hover:border-gray-200'
+              filtre === c.key ? `${c.border} ring-2` : 'border-transparent hover:border-gray-200'
             }`}
           >
-            <p className={`text-${c.color}-600 text-[10px] md:text-xs font-bold uppercase`}>{c.label}</p>
+            <p className={`${c.text} text-[10px] md:text-xs font-bold uppercase`}>{c.label}</p>
             <p className="text-xl md:text-2xl font-bold text-gray-800 mt-1">{c.value}</p>
           </div>
         ))}
@@ -159,7 +178,7 @@ export default function DFCDashboard() {
                     <td className="px-4 py-3 font-mono text-xs text-emerald-600">{b.numero}</td>
                     <td className="px-4 py-3 font-medium text-gray-700">{b.profiles?.prenom} {b.profiles?.nom}</td>
                     <td className="px-4 py-3 text-gray-500">{b.profiles?.departements?.nom ?? '-'}</td>
-                    <td className="px-4 py-3 text-gray-600 max-w-[200px] truncate">{b.description}</td>
+                    <td className="px-4 py-3 text-gray-600 max-w-200px truncate">{b.description}</td>
                     <td className="px-4 py-3 font-bold whitespace-nowrap">{fmt(getMontant(b))}</td>
                     <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">{new Date(b.created_at).toLocaleDateString('fr-FR')}</td>
                     <td className="px-4 py-3">
