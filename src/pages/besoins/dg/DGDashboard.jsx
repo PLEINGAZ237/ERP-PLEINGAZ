@@ -2,18 +2,19 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import DGLayout from '@/components/besoins/dg/DGLayout'
+import { Loader2 } from 'lucide-react'
 
 const STATUT_STYLE = {
-  EN_ATTENTE_DG:  'bg-blue-100 text-blue-700',
-  VALIDE_DG:      'bg-emerald-100 text-emerald-700',
-  REJETE_DG:      'bg-red-200 text-red-900 border border-red-300',
+  EN_ATTENTE_DG: 'bg-blue-100 text-blue-700',
+  VALIDE_DG:     'bg-emerald-100 text-emerald-700',
+  REJETE_DG:     'bg-red-200 text-red-900',
 }
-
 const STATUT_LABEL = {
-  EN_ATTENTE_DG:  'En attente votre validation',
-  VALIDE_DG:      'Validé — En attente décaissement',
-  REJETE_DG:      'Rejeté par vous (DG)',
+  EN_ATTENTE_DG: 'En attente',
+  VALIDE_DG:     'Validé',
+  REJETE_DG:     'Rejeté',
 }
+const fmt = (n) => n != null ? Number(n).toLocaleString('fr-FR') + ' FCFA' : '—'
 
 export default function DGDashboard() {
   const navigate = useNavigate()
@@ -42,91 +43,110 @@ export default function DGDashboard() {
 
   const stats = {
     aDecider: besoins.filter(b => b.statut === 'EN_ATTENTE_DG').length,
-    valides: besoins.filter(b => b.statut === 'VALIDE_DG').length,
-    rejetes: besoins.filter(b => b.statut === 'REJETE_DG').length,
+    valides:  besoins.filter(b => b.statut === 'VALIDE_DG').length,
+    rejetes:  besoins.filter(b => b.statut === 'REJETE_DG').length,
   }
 
-  const filteredBesoins = besoins.filter(b => {
+  const filtered = besoins.filter(b => {
     if (filtre === 'A_DECIDER') return b.statut === 'EN_ATTENTE_DG'
-    if (filtre === 'VALIDES') return b.statut === 'VALIDE_DG'
-    if (filtre === 'REJETES') return b.statut === 'REJETE_DG'
+    if (filtre === 'VALIDES')   return b.statut === 'VALIDE_DG'
+    if (filtre === 'REJETES')   return b.statut === 'REJETE_DG'
     return true
   })
 
+  const StatCard = ({ label, value, color, filterKey }) => (
+    <button
+      onClick={() => setFiltre(filterKey)}
+      className={`p-4 md:p-5 rounded-xl shadow-sm bg-white text-left transition-all w-full ${
+        filtre === filterKey ? 'ring-2 ring-offset-1 ring-emerald-500' : 'hover:shadow-md'
+      }`}
+    >
+      <p className={`text-${color}-600 text-[10px] md:text-xs font-bold uppercase`}>{label}</p>
+      <p className="text-2xl md:text-3xl font-bold text-gray-800 mt-1">{value}</p>
+    </button>
+  )
+
   return (
     <DGLayout>
-      <div className="p-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">Tableau de bord DG</h1>
+      <h1 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Tableau de bord DG</h1>
+      <p className="text-sm text-gray-400 mb-6">Validez les besoins soumis par le DFC.</p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <div onClick={() => setFiltre('A_DECIDER')} className={`p-4 rounded-xl shadow bg-white border-2 cursor-pointer transition-all ${filtre === 'A_DECIDER' ? 'border-blue-600' : 'border-transparent'}`}>
-            <p className="text-blue-600 text-[10px] font-bold uppercase">À décider</p>
-            <p className="text-2xl font-bold">{stats.aDecider}</p>
-          </div>
-          <div onClick={() => setFiltre('VALIDES')} className={`p-4 rounded-xl shadow bg-white border-2 cursor-pointer transition-all ${filtre === 'VALIDES' ? 'border-emerald-600' : 'border-transparent'}`}>
-            <p className="text-emerald-600 text-[10px] font-bold uppercase">Validés</p>
-            <p className="text-2xl font-bold">{stats.valides}</p>
-          </div>
-          <div onClick={() => setFiltre('REJETES')} className={`p-4 rounded-xl shadow bg-white border-2 cursor-pointer transition-all ${filtre === 'REJETES' ? 'border-red-600' : 'border-transparent'}`}>
-            <p className="text-red-600 text-[10px] font-bold uppercase">Rejetés</p>
-            <p className="text-2xl font-bold">{stats.rejetes}</p>
-          </div>
+      <div className="grid grid-cols-3 gap-3 md:gap-4 mb-6 md:mb-8">
+        <StatCard label="À décider" value={stats.aDecider} color="blue"    filterKey="A_DECIDER" />
+        <StatCard label="Validés"   value={stats.valides}  color="emerald" filterKey="VALIDES" />
+        <StatCard label="Rejetés"   value={stats.rejetes}  color="red"     filterKey="REJETES" />
+      </div>
+
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+          <Loader2 className="animate-spin mb-2" />
+          <p className="text-sm">Chargement...</p>
         </div>
+      ) : (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="flex items-center justify-between px-4 md:px-5 py-3 md:py-4 border-b">
+            <h2 className="font-semibold text-gray-700 text-sm md:text-base">
+              {filtre === 'A_DECIDER' ? 'En attente de décision' : filtre === 'VALIDES' ? 'Validés' : 'Rejetés'}
+            </h2>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-600">{filtered.length}</span>
+          </div>
 
-        {loading ? <p className="text-center py-10 text-gray-400 italic text-sm">Chargement des données...</p> : (
-          <div className="bg-white rounded-xl shadow overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b">
-              <h2 className="font-semibold text-gray-700">
-                {filtre === 'A_DECIDER' ? 'Besoins en attente de votre décision' :
-                 filtre === 'VALIDES' ? 'Besoins validés' : 'Besoins rejetés'}
-              </h2>
-              <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-                filtre === 'A_DECIDER' ? 'bg-blue-100 text-blue-700' :
-                filtre === 'VALIDES' ? 'bg-emerald-100 text-emerald-700' :
-                'bg-red-100 text-red-700'
-              }`}>{filteredBesoins.length}</span>
-            </div>
-            {filteredBesoins.length === 0 ? (
-              <p className="text-gray-400 text-sm text-center py-8">Aucun besoin</p>
-            ) : (
-              <div className="overflow-x-auto">
+          {filtered.length === 0 ? (
+            <p className="text-gray-400 text-sm text-center py-12">Aucun besoin</p>
+          ) : (
+            <>
+              {/* Mobile */}
+              <div className="md:hidden divide-y divide-gray-50">
+                {filtered.map(b => {
+                  const montantDfc = b.validations_dfc?.[0]?.montant_valide
+                  return (
+                    <div key={b.id} onClick={() => navigate(`/besoins/dg/besoin/${b.id}`)} className="p-4 active:bg-gray-50 cursor-pointer">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <p className="font-mono text-xs text-emerald-600 font-medium">{b.numero}</p>
+                          <p className="text-sm font-medium text-gray-800 mt-0.5">{b.profiles?.prenom} {b.profiles?.nom}</p>
+                        </div>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${STATUT_STYLE[b.statut] ?? ''}`}>
+                          {STATUT_LABEL[b.statut]}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 truncate mb-2">{b.description}</p>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-bold text-gray-800">{fmt(b.montant_demande)}</p>
+                          {montantDfc && <p className="text-[10px] text-indigo-500">DFC : {fmt(montantDfc)}</p>}
+                        </div>
+                        <p className="text-[10px] text-gray-400">{new Date(b.created_at).toLocaleDateString('fr-FR')}</p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Desktop */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 border-b">
                     <tr>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-500">Numéro</th>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-500">Employé</th>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-500">Département</th>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-500">Montant demandé</th>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-500">Avis DFC</th>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-500">Date</th>
-                      <th className="text-right px-4 py-3 font-semibold text-gray-500">Statut</th>
+                      {['Numéro','Employé','Département','Montant demandé','Avis DFC','Date','Statut'].map(h => (
+                        <th key={h} className="text-left px-4 py-3 font-semibold text-gray-500 text-xs uppercase">{h}</th>
+                      ))}
                     </tr>
                   </thead>
-                  <tbody>
-                    {filteredBesoins.map(b => {
+                  <tbody className="divide-y divide-gray-50">
+                    {filtered.map(b => {
                       const montantDfc = b.validations_dfc?.[0]?.montant_valide
-                      const montantDg = b.validations_dg?.[0]?.montant_valide
-                      const estValideOuDecaisse = ['VALIDE_DG', 'DECAISSE'].includes(b.statut)
-                      const montantAffiche = estValideOuDecaisse ? (montantDg || b.montant_demande) : b.montant_demande
-
                       return (
-                        <tr key={b.id} className="border-b hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => navigate(`/besoins/dg/besoin/${b.id}`)}>
-                          <td className="px-4 py-3 font-mono text-xs text-gray-600">{b.numero}</td>
-                          <td className="px-4 py-3 font-medium text-gray-700">{b.profiles?.prenom} {b.profiles?.nom}</td>
-                          <td className="px-4 py-3 text-gray-500">{b.profiles?.departements?.nom ?? '-'}</td>
-                          <td className="px-4 py-3 text-gray-600 font-bold">{Number(montantAffiche).toLocaleString('fr-FR')}</td>
-                          <td className="px-4 py-3">
-                            {montantDfc
-                              ? <span className="font-medium text-indigo-700">{Number(montantDfc).toLocaleString('fr-FR')}</span>
-                              : <span className="text-gray-400">—</span>
-                            }
-                          </td>
-                          <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">
-                            {new Date(b.created_at).toLocaleDateString('fr-FR')}
-                          </td>
-                          <td className="px-4 py-3 text-right">
+                        <tr key={b.id} className="hover:bg-gray-50/50 cursor-pointer transition-colors" onClick={() => navigate(`/besoins/dg/besoin/${b.id}`)}>
+                          <td className="px-4 py-3.5 font-mono text-xs text-emerald-600 font-medium">{b.numero}</td>
+                          <td className="px-4 py-3.5 font-medium text-gray-700">{b.profiles?.prenom} {b.profiles?.nom}</td>
+                          <td className="px-4 py-3.5 text-gray-500">{b.profiles?.departements?.nom ?? '-'}</td>
+                          <td className="px-4 py-3.5 text-gray-700 font-bold whitespace-nowrap">{fmt(b.montant_demande)}</td>
+                          <td className="px-4 py-3.5">{montantDfc ? <span className="font-medium text-indigo-700">{fmt(montantDfc)}</span> : <span className="text-gray-400">—</span>}</td>
+                          <td className="px-4 py-3.5 text-gray-400 text-xs whitespace-nowrap">{new Date(b.created_at).toLocaleDateString('fr-FR')}</td>
+                          <td className="px-4 py-3.5">
                             <span className={`px-2 py-1 rounded-full text-[10px] font-bold whitespace-nowrap ${STATUT_STYLE[b.statut] ?? ''}`}>
-                              {STATUT_LABEL[b.statut] ?? b.statut}
+                              {STATUT_LABEL[b.statut]}
                             </span>
                           </td>
                         </tr>
@@ -135,10 +155,10 @@ export default function DGDashboard() {
                   </tbody>
                 </table>
               </div>
-            )}
-          </div>
-        )}
-      </div>
+            </>
+          )}
+        </div>
+      )}
     </DGLayout>
   )
 }
