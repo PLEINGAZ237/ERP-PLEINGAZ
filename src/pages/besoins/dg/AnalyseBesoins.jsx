@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import DGLayout from '@/components/besoins/dg/DGLayout'
 import DFCLayout from '@/components/besoins/dfc/DFCLayout'
+import AnalyseLayout from '@/components/besoins/analyse/AnalyseLayout'
 import { exportExcel, exportPDF } from '@/lib/exportBesoins'
 import { Loader2, ShieldBan, ShieldCheck, Trash2, Plus, AlertTriangle, Search, FileSpreadsheet, FileText, X } from 'lucide-react'
 
@@ -92,8 +93,9 @@ export default function AnalyseBesoins({ layout = "dg" }) {
   const [exporting, setExporting] = useState(false)
 
   const showControles = layout === "dg"
-  const Layout = layout === "dfc" ? DFCLayout : DGLayout
-  const besoinDetailPath = layout === "dfc" ? "/besoins/dfc/besoin/" : "/besoins/dg/besoin/"
+  const LAYOUTS = { dg: DGLayout, dfc: DFCLayout, analyse: AnalyseLayout }
+  const Layout = LAYOUTS[layout] || DGLayout
+  const besoinDetailPath = layout === "dfc" ? "/besoins/dfc/besoin/" : layout === "analyse" ? "/besoins/analyse/besoin/" : "/besoins/dg/besoin/"
 
   const [recherche, setRecherche] = useState('')
   const [statutFiltre, setStatutFiltre] = useState('')
@@ -297,7 +299,7 @@ export default function AnalyseBesoins({ layout = "dg" }) {
               <div className="hidden md:block overflow-x-auto"><table className="w-full text-sm"><thead className="bg-gray-50 border-b"><tr>{['Numéro','Employé','Département','Description','Montant','Date','Statut'].map(h => (<th key={h} className="text-left px-4 py-3 font-semibold text-gray-500 text-xs uppercase">{h}</th>))}</tr></thead><tbody className="divide-y divide-gray-50">{besoinsFiltres.map(b => (
                 <tr key={b.id} className="hover:bg-gray-50/50 cursor-pointer transition-colors" onClick={() => navigate(`${besoinDetailPath}${b.id}`)}>
                   <td className="px-4 py-3 font-mono text-xs text-red-600">{b.numero}</td><td className="px-4 py-3 font-medium text-gray-700">{b.profiles?.prenom} {b.profiles?.nom}</td>
-                  <td className="px-4 py-3 text-gray-500">{b.profiles?.departements?.nom ?? '-'}</td><td className="px-4 py-3 text-gray-600 max-w-[200px] truncate">{b.description}</td>
+                  <td className="px-4 py-3 text-gray-500">{b.profiles?.departements?.nom ?? '-'}</td><td className="px-4 py-3 text-gray-600 max-w-200px truncate">{b.description}</td>
                   <td className="px-4 py-3 font-bold whitespace-nowrap">{Number(b.montant_demande).toLocaleString('fr-FR')}</td><td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">{new Date(b.created_at).toLocaleDateString('fr-FR')}</td>
                   <td className="px-4 py-3"><span className={`px-2 py-1 rounded-full text-[10px] font-bold whitespace-nowrap ${STATUT_STYLE[b.statut] ?? ''}`}>{statutLabel(b.statut)}</span></td></tr>))}</tbody></table></div>
             </>)}
@@ -312,7 +314,7 @@ export default function AnalyseBesoins({ layout = "dg" }) {
             { label: 'Validés', value: stats.valides, sub: stats.total > 0 ? Math.round(stats.valides / stats.total * 100) + '%' : '0%', color: 'emerald' },
             { label: 'Rejetés', value: stats.rejetes, sub: stats.total > 0 ? Math.round(stats.rejetes / stats.total * 100) + '%' : '0%', color: 'red' },
           ].map(k => (<div key={k.label} className="bg-white rounded-xl shadow-sm border border-gray-100 p-4"><p className={`text-[10px] font-bold uppercase text-${k.color}-500`}>{k.label}</p><p className="text-lg md:text-2xl font-bold text-gray-800 mt-1">{k.value}</p>{k.sub && <p className="text-[10px] text-gray-400">{k.sub}</p>}</div>))}</div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-5"><h2 className="font-semibold text-gray-700 text-sm uppercase mb-4">Par statut</h2><div className="space-y-2">{Object.entries(stats.parStatut).sort((a, b) => b[1].count - a[1].count).map(([statut, data]) => (<div key={statut} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3"><span className={`px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap sm:min-w-[140px] text-center ${STATUT_STYLE[statut] ?? 'bg-gray-100'}`}>{statutLabel(statut)}</span><div className="flex-1 bg-gray-100 rounded-full h-5 relative overflow-hidden"><div className="h-full bg-red-200 rounded-full" style={{ width: `${stats.total > 0 ? (data.count / stats.total * 100) : 0}%` }} /><span className="absolute inset-0 flex items-center px-2 text-[10px] font-bold text-gray-600">{data.count} — {Number(data.montant).toLocaleString('fr-FR')} FCFA</span></div></div>))}</div></div>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-5"><h2 className="font-semibold text-gray-700 text-sm uppercase mb-4">Par statut</h2><div className="space-y-2">{Object.entries(stats.parStatut).sort((a, b) => b[1].count - a[1].count).map(([statut, data]) => (<div key={statut} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3"><span className={`px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap sm:min-w-140px text-center ${STATUT_STYLE[statut] ?? 'bg-gray-100'}`}>{statutLabel(statut)}</span><div className="flex-1 bg-gray-100 rounded-full h-5 relative overflow-hidden"><div className="h-full bg-red-200 rounded-full" style={{ width: `${stats.total > 0 ? (data.count / stats.total * 100) : 0}%` }} /><span className="absolute inset-0 flex items-center px-2 text-[10px] font-bold text-gray-600">{data.count} — {Number(data.montant).toLocaleString('fr-FR')} FCFA</span></div></div>))}</div></div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-5"><h2 className="font-semibold text-gray-700 text-sm uppercase mb-4">Par département</h2><div className="space-y-3">{sortedDepts.map(([nom, data]) => (<div key={nom}><div className="flex justify-between text-sm mb-1"><span className="font-medium text-gray-700 truncate">{nom}</span><span className="text-xs text-gray-500 whitespace-nowrap ml-2">{data.count} — {Number(data.montant).toLocaleString('fr-FR')}</span></div><div className="bg-gray-100 rounded-full h-3 overflow-hidden"><div className="h-full bg-red-400 rounded-full" style={{ width: `${(data.count / maxDeptCount) * 100}%` }} /></div></div>))}</div></div>
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-5"><h2 className="font-semibold text-gray-700 text-sm uppercase mb-4">Top 10 employés</h2><div className="space-y-3">{sortedEmployes.map(([nom, data], i) => (<div key={nom}><div className="flex justify-between text-sm mb-1"><span className="font-medium text-gray-700 truncate"><span className="text-xs text-gray-400 mr-1">#{i+1}</span>{nom}</span><span className="text-xs text-gray-500 whitespace-nowrap ml-2">{data.count} — {Number(data.montant).toLocaleString('fr-FR')}</span></div><div className="bg-gray-100 rounded-full h-3 overflow-hidden"><div className="h-full bg-blue-400 rounded-full" style={{ width: `${(data.count / maxEmpCount) * 100}%` }} /></div></div>))}</div></div>

@@ -42,6 +42,7 @@ import ValiderBesoin       from './pages/besoins/dfc/ValiderBesoin'
 import DGDashboard         from './pages/besoins/dg/DGDashboard'
 import ValiderBesoinDG     from './pages/besoins/dg/ValiderBesoinDG'
 import AnalyseBesoins      from './pages/besoins/dg/AnalyseBesoins'
+import DetailBesoinAnalyse  from "./pages/besoins/dg/DetailBesoinAnalyse"
 
 // ── Module Besoins : Caissière ───────────────────────────────────────────────
 import CaissiereDashboard  from './pages/besoins/caissiere/CaissiereDashboard'
@@ -56,8 +57,8 @@ import SaisirJustificatif  from './pages/besoins/justif/SaisirJustificatif'
   ──────────────────────────────────────────────────────
     emet_besoin     → émet des besoins
     DFC             → valide côté DFC
-    DG              → valide côté DG
-    analyse_besoin  → analyse des besoins (accès DG)
+    DG              → valide côté DG + analyse & contrôles
+    analyse_besoin  → analyse des besoins (dashboard dédié, sans contrôles)
     decaissement    → gère les décaissements (caissière)
     Justif          → saisit les justificatifs
 
@@ -65,7 +66,6 @@ import SaisirJustificatif  from './pages/besoins/justif/SaisirJustificatif'
     Admin           → accès admin complet
 */
 
-// Tous les rôles du module besoins — tout utilisateur ayant UN de ces rôles peut émettre un besoin
 const BESOINS_ALL = ['emet_besoin', 'DFC', 'DG', 'analyse_besoin', 'decaissement', 'Justif']
 
 function App() {
@@ -102,7 +102,7 @@ function App() {
           <Route path="/admin/roles"        element={<ProtectedRoute roles={['Admin']}><Roles /></ProtectedRoute>} />
           <Route path="/admin/utilisateurs" element={<ProtectedRoute roles={['Admin']}><Utilisateurs /></ProtectedRoute>} />
 
-          {/* ── Besoins : Employé (tous les rôles besoins peuvent émettre) ─ */}
+          {/* ── Besoins : Employé (tous les rôles besoins) ────────── */}
           <Route path="/besoins/employe"               element={<ProtectedRoute module="besoins" moduleRoles={BESOINS_ALL}><EmployeDashboard /></ProtectedRoute>} />
           <Route path="/besoins/employe/creer-besoin"  element={<ProtectedRoute module="besoins" moduleRoles={BESOINS_ALL}><CreerBesoin /></ProtectedRoute>} />
           <Route path="/besoins/employe/mes-besoins"   element={<ProtectedRoute module="besoins" moduleRoles={BESOINS_ALL}><MesBesoins /></ProtectedRoute>} />
@@ -111,12 +111,18 @@ function App() {
           {/* ── Besoins : DFC ─────────────────────────────────────── */}
           <Route path="/besoins/dfc"            element={<ProtectedRoute module="besoins" moduleRoles={['DFC']}><DFCDashboard /></ProtectedRoute>} />
           <Route path="/besoins/dfc/besoin/:id" element={<ProtectedRoute module="besoins" moduleRoles={['DFC']}><ValiderBesoin /></ProtectedRoute>} />
-          <Route path="/besoins/dfc/analyse"    element={<ProtectedRoute module="besoins" moduleRoles={['DFC']}><AnalyseBesoins layout="dfc" /></ProtectedRoute>} />
+          <Route path="/besoins/dfc/analyse"              element={<ProtectedRoute module="besoins" moduleRoles={['DFC']}><AnalyseBesoins layout="dfc" /></ProtectedRoute>} />
+          <Route path="/besoins/dfc/analyse/besoin/:id"   element={<ProtectedRoute module="besoins" moduleRoles={['DFC']}><DetailBesoinAnalyse layout="dfc" /></ProtectedRoute>} />
 
-          {/* ── Besoins : DG ──────────────────────────────────────── */}
-          <Route path="/besoins/dg"             element={<ProtectedRoute module="besoins" moduleRoles={['DG', 'analyse_besoin']}><DGDashboard /></ProtectedRoute>} />
-          <Route path="/besoins/dg/analyse"     element={<ProtectedRoute module="besoins" moduleRoles={['DG', 'analyse_besoin']}><AnalyseBesoins /></ProtectedRoute>} />
-          <Route path="/besoins/dg/besoin/:id"  element={<ProtectedRoute module="besoins" moduleRoles={['DG', 'analyse_besoin']}><ValiderBesoinDG /></ProtectedRoute>} />
+          {/* ── Besoins : DG (rôle DG uniquement) ─────────────────── */}
+          <Route path="/besoins/dg"             element={<ProtectedRoute module="besoins" moduleRoles={['DG']}><DGDashboard /></ProtectedRoute>} />
+          <Route path="/besoins/dg/analyse"              element={<ProtectedRoute module="besoins" moduleRoles={['DG']}><AnalyseBesoins layout="dg" /></ProtectedRoute>} />
+          <Route path="/besoins/dg/analyse/besoin/:id"   element={<ProtectedRoute module="besoins" moduleRoles={['DG']}><DetailBesoinAnalyse layout="dg" /></ProtectedRoute>} />
+          <Route path="/besoins/dg/besoin/:id"  element={<ProtectedRoute module="besoins" moduleRoles={['DG']}><ValiderBesoinDG /></ProtectedRoute>} />
+
+          {/* ── Besoins : Analyse (rôle analyse_besoin) ───────────── */}
+          <Route path="/besoins/analyse"             element={<ProtectedRoute module="besoins" moduleRoles={['analyse_besoin']}><AnalyseBesoins layout="analyse" /></ProtectedRoute>} />
+          <Route path="/besoins/analyse/besoin/:id"  element={<ProtectedRoute module="besoins" moduleRoles={['analyse_besoin']}><DetailBesoinAnalyse layout="analyse" /></ProtectedRoute>} />
 
           {/* ── Besoins : Caissière ───────────────────────────────── */}
           <Route path="/besoins/caissiere"             element={<ProtectedRoute module="besoins" moduleRoles={['decaissement']}><CaissiereDashboard /></ProtectedRoute>} />

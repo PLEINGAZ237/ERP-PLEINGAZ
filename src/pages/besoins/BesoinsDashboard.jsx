@@ -7,7 +7,7 @@ const MODULE_CODE = 'besoins'
 // Priorité de redirection — noms EXACTS de la table `roles` en base
 const ROLE_REDIRECT = [
   { role: 'DG',              path: '/besoins/dg' },
-  { role: 'analyse_besoin',  path: '/besoins/dg' },
+  { role: 'analyse_besoin',  path: '/besoins/analyse' },
   { role: 'DFC',             path: '/besoins/dfc' },
   { role: 'decaissement',    path: '/besoins/caissiere' },
   { role: 'Justif',          path: '/besoins/justif' },

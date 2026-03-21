@@ -54,6 +54,7 @@ export default function Decaissement() {
   const [montantDecaisse, setMontantDecaisse]               = useState('')
   const [justificationInferieur, setJustificationInferieur] = useState('')
   const [images, setImages]                                  = useState([]) // { file, preview }[]
+  const [retourInfo, setRetourInfo]                          = useState(null) // { montant_retour, montant_facture }
 
   useEffect(() => {
     if (!id) return
@@ -71,6 +72,22 @@ export default function Decaissement() {
         setBesoin(row)
         if (row.statut === 'VALIDE_DG' && row.dg_montant_valide) {
           setMontantDecaisse(row.dg_montant_valide.toString())
+        }
+
+        // Si EN_ATTENTE_RETOUR_CAISSE, charger le montant retour via RPC
+        if (row.statut === 'EN_ATTENTE_RETOUR_CAISSE') {
+          const { data: retourData, error: retErr } = await supabase
+            .rpc('get_retour_info', { p_besoin_id: id })
+
+          console.log('[Retour info]', retourData, retErr)
+
+          if (retourData && !retErr) {
+            setRetourInfo({
+              montant_decaisse: retourData.montant_decaisse,
+              montant_facture: retourData.montant_facture,
+              montant_retour: retourData.montant_retour,
+            })
+          }
         }
       }
       setLoading(false)
@@ -459,13 +476,28 @@ export default function Decaissement() {
           {peutConfirmerRetour && (
             <div className='bg-white rounded-xl shadow-sm border border-gray-100 p-6'>
               <h2 className='text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-4'>Retour en caisse attendu</h2>
-              <div className='bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4'>
-                <p className='text-sm text-amber-800 mb-3'>Confirmez la réception du reliquat.</p>
+              <div className='bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4 space-y-3'>
+                <p className='text-sm text-amber-800 font-medium'>Confirmez la réception du reliquat.</p>
+
                 {besoin.dec_montant_decaisse && (
-                  <p className='text-sm'>
-                    <span className='text-amber-600'>Montant décaissé : </span>
+                  <div className='grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm'>
+                    <span className='text-amber-600'>Montant décaissé :</span>
                     <span className='font-bold text-amber-800'>{fmt(besoin.dec_montant_decaisse)}</span>
-                  </p>
+
+                    {retourInfo?.montant_facture != null && (
+                      <>
+                        <span className='text-amber-600'>Montant facture (justif) :</span>
+                        <span className='font-bold text-amber-800'>{fmt(retourInfo.montant_facture)}</span>
+                      </>
+                    )}
+
+                    {retourInfo?.montant_retour != null && (
+                      <>
+                        <span className='text-amber-700 font-bold'>Montant à retourner :</span>
+                        <span className='font-black text-amber-900 text-lg'>{fmt(retourInfo.montant_retour)}</span>
+                      </>
+                    )}
+                  </div>
                 )}
               </div>
               {error   && <div className='p-3 bg-red-50 text-red-600 text-xs font-bold rounded-xl'>{error}</div>}
@@ -574,7 +606,14 @@ export default function Decaissement() {
               </>
             )}
             {confirmAction === 'retour' && (
-              <p className='text-gray-500 text-sm mt-1'>Le besoin sera marqué comme bouclé.</p>
+              <>
+                <p className='text-gray-500 text-sm mt-1'>
+                  {retourInfo?.montant_retour != null
+                    ? <>Montant à retourner : <strong className='text-amber-700'>{fmt(retourInfo.montant_retour)}</strong></>
+                    : 'Le besoin sera marqué comme bouclé.'}
+                </p>
+                <p className='text-gray-400 text-xs mt-1'>Le besoin sera marqué comme bouclé après confirmation.</p>
+              </>
             )}
             <div className='flex gap-3 mt-5 justify-end'>
               <button onClick={() => setConfirmAction(null)}
