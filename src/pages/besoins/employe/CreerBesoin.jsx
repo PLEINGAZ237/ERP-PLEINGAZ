@@ -72,7 +72,7 @@ export default function CreerBesoin() {
 
   const getFileIcon = (file) => {
     if (file.type === 'application/pdf') return <FileText size={14} className="text-red-500" />
-    return <Image size={14} className="text-blue-500" />
+    return <Image size={14} className="text-red-500" />
   }
 
   const uploadFichiers = async (besoinId) => {
@@ -161,7 +161,7 @@ export default function CreerBesoin() {
             <div className='flex items-center justify-between mb-4'>
               <div className='flex items-center gap-2'>
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black
-                  ${entrepriseConfirmee ? 'bg-green-500 text-white' : 'bg-blue-600 text-white'}`}>
+                  ${entrepriseConfirmee ? 'bg-green-500 text-white' : 'bg-red-600 text-white'}`}>
                   {entrepriseConfirmee ? '✓' : '1'}
                 </div>
                 <h2 className='text-sm font-bold text-gray-700 uppercase tracking-wider'>
@@ -192,18 +192,18 @@ export default function CreerBesoin() {
                       {entreprises.map(ent => (
                         <label key={ent.id}
                           className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all select-none
-                            ${entrepriseId === ent.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300 bg-white'}`}>
+                            ${entrepriseId === ent.id ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:border-gray-300 bg-white'}`}>
                           <input type='radio' name='entreprise' value={ent.id} checked={entrepriseId === ent.id}
-                            onChange={() => setEntrepriseId(ent.id)} className='w-4 h-4 accent-blue-600' />
+                            onChange={() => setEntrepriseId(ent.id)} className='w-4 h-4 accent-red-600' />
                           <div>
-                            <p className={`text-sm font-bold ${entrepriseId === ent.id ? 'text-blue-800' : 'text-gray-700'}`}>{ent.nom}</p>
+                            <p className={`text-sm font-bold ${entrepriseId === ent.id ? 'text-red-800' : 'text-gray-700'}`}>{ent.nom}</p>
                             <p className='text-[10px] font-mono text-gray-400 uppercase'>{ent.code}</p>
                           </div>
                         </label>
                       ))}
                     </div>
                     <button type='button' disabled={!entrepriseId} onClick={() => setEntrepriseConfirmee(true)}
-                      className='w-full sm:w-auto px-6 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-blue-700 transition-all mt-1'>
+                      className='w-full sm:w-auto px-6 py-2.5 bg-red-600 text-white rounded-xl text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-red-700 transition-all mt-1'>
                       Confirmer →
                     </button>
                   </>
@@ -216,7 +216,7 @@ export default function CreerBesoin() {
           <div className={`transition-all duration-300 ${entrepriseConfirmee ? 'opacity-100' : 'opacity-30 pointer-events-none select-none'}`}>
             <div className='bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-8'>
               <div className='flex items-center gap-2 mb-6'>
-                <div className='w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-black'>2</div>
+                <div className='w-6 h-6 rounded-full bg-red-600 text-white flex items-center justify-center text-xs font-black'>2</div>
                 <h2 className='text-sm font-bold text-gray-700 uppercase tracking-wider'>Détails du besoin</h2>
               </div>
 
@@ -227,7 +227,7 @@ export default function CreerBesoin() {
                   </label>
                   <textarea name='description' value={form.description} onChange={handleChange} rows={3}
                     placeholder='Ex: Achat de fournitures de bureau...'
-                    className='w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none'
+                    className='w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all resize-none'
                     required />
                 </div>
 
@@ -237,7 +237,7 @@ export default function CreerBesoin() {
                   </label>
                   <div className='relative'>
                     <input type='number' name='montant' value={form.montant} onChange={handleChange} placeholder='0'
-                      className='w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-bold pr-16'
+                      className='w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 font-bold pr-16'
                       required />
                     <span className='absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400'>FCFA</span>
                   </div>
@@ -249,7 +249,7 @@ export default function CreerBesoin() {
                   </label>
                   <textarea name='justification' value={form.justification} onChange={handleChange} rows={4}
                     placeholder='Expliquez pourquoi ce besoin est nécessaire...'
-                    className='w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none'
+                    className='w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all resize-none'
                     required />
                 </div>
 
@@ -260,8 +260,8 @@ export default function CreerBesoin() {
                   </label>
 
                   <div onClick={() => fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-blue-200 rounded-xl p-5 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-colors">
-                    <Upload size={22} className="mx-auto text-blue-400 mb-2" />
+                    className="border-2 border-dashed border-red-200 rounded-xl p-5 text-center cursor-pointer hover:border-red-400 hover:bg-red-50/30 transition-colors">
+                    <Upload size={22} className="mx-auto text-red-400 mb-2" />
                     <p className="text-sm text-gray-600 font-medium">Cliquer pour ajouter des fichiers</p>
                     <p className="text-[10px] text-gray-400 mt-1">PDF, JPG, PNG, WebP — Max 10 Mo par fichier</p>
                   </div>
@@ -298,7 +298,7 @@ export default function CreerBesoin() {
 
                 <div className='flex flex-col sm:flex-row gap-3 pt-2'>
                   <button type='submit' disabled={loading || !entrepriseConfirmee || isBlocked}
-                    className='sm:order-2 w-full sm:w-auto px-8 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 font-bold text-sm shadow-lg shadow-blue-500/20 transition-all'>
+                    className='sm:order-2 w-full sm:w-auto px-8 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 disabled:opacity-50 font-bold text-sm shadow-lg shadow-red-500/20 transition-all'>
                     {loading ? 'Envoi...' : 'Soumettre le besoin'}
                   </button>
                   <button type='button' onClick={() => navigate('/besoins/employe')}

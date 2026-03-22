@@ -43,7 +43,7 @@ export default function EmployeLayout({ children }) {
   return (
     <div className='min-h-screen flex flex-col md:flex-row bg-gray-100'>
       {/* Barre de navigation Mobile */}
-      <div className='md:hidden bg-blue-900 text-white p-4 flex justify-between items-center sticky top-0 z-50'>
+      <div className='md:hidden bg-red-900 text-white p-4 flex justify-between items-center sticky top-0 z-50'>
         <span className='font-bold tracking-tight'>MonPleinGaz</span>
         <button onClick={() => setIsMenuOpen(!isMenuOpen)} className='p-1'>
           {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -53,14 +53,14 @@ export default function EmployeLayout({ children }) {
       {/* Sidebar - Overlay sur mobile, sticky sur desktop */}
       <aside
         className={`
-        fixed inset-y-0 left-0 z-40 w-64 bg-blue-900 text-white flex flex-col transform transition-transform duration-300 ease-in-out
+        fixed inset-y-0 left-0 z-40 w-64 bg-red-900 text-white flex flex-col transform transition-transform duration-300 ease-in-out
         ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}
         md:sticky md:top-0 md:h-screen md:translate-x-0 md:flex shrink-0
       `}
       >
-        <div className='p-6 border-b border-blue-800 hidden md:block'>
+        <div className='p-6 border-b border-red-800 hidden md:block'>
           <p className='font-bold text-lg tracking-tight'>MonPleinGaz</p>
-          <p className='text-xs text-blue-300 uppercase tracking-widest mt-1'>
+          <p className='text-xs text-red-300 uppercase tracking-widest mt-1'>
             Espace d'émission de besoins
           </p>
         </div>
@@ -80,8 +80,8 @@ export default function EmployeLayout({ children }) {
                 onClick={() => setIsMenuOpen(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-all ${
                   active
-                    ? 'bg-blue-600 text-white shadow-lg'
-                    : 'text-blue-200 hover:bg-blue-800'
+                    ? 'bg-red-600 text-white shadow-lg'
+                    : 'text-red-200 hover:bg-red-800'
                 }`}
               >
                 {icon}
@@ -91,20 +91,20 @@ export default function EmployeLayout({ children }) {
           })}
         </nav>
 
-        <div className='p-4 border-t border-blue-800 bg-blue-950/50'>
+        <div className='p-4 border-t border-red-800 bg-red-950/50'>
           <div className='mb-4 px-2 space-y-1'>
             <p className='text-sm font-bold text-white truncate'>
               {profile?.prenom} {profile?.nom}
             </p>
-            <p className='text-xs text-blue-300 font-semibold truncate'>
+            <p className='text-xs text-red-300 font-semibold truncate'>
               {profile?.entreprises?.nom ?? '—'}
             </p>
-            <p className='text-xs text-blue-400 truncate'>
+            <p className='text-xs text-red-400 truncate'>
               {profile?.departements?.nom ?? '—'}
             </p>
             {profile?.services?.nom && (
-              <p className='text-sm text-blue-500/80 truncate'>
-                Responsable <span className='font-semibold text-blue-300'>{profile.services.nom}</span>
+              <p className='text-sm text-red-500/80 truncate'>
+                Responsable <span className='font-semibold text-red-300'>{profile.services.nom}</span>
               </p>
             )}
           </div>

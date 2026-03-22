@@ -52,7 +52,7 @@ function buildEmailHtml(params: {
     <!-- Header -->
     <div style="background:linear-gradient(135deg,#1F2937,#111827);border-radius:16px 16px 0 0;padding:24px 28px;text-align:center;">
       <div style="display:inline-block;background:rgba(255,255,255,0.1);border-radius:12px;padding:8px 16px;margin-bottom:12px;">
-        <span style="color:#fff;font-size:14px;font-weight:800;letter-spacing:0.1em;">🔥 PLEINGAZ ERP</span>
+        <span style="color:#fff;font-size:14px;font-weight:800;letter-spacing:0.1em;"> PLEINGAZ </span>
       </div>
       <p style="color:#9CA3AF;font-size:12px;margin:0;letter-spacing:0.05em;">INFOTECH SA / WONDERFUL</p>
     </div>
@@ -109,7 +109,7 @@ function buildEmailHtml(params: {
       <!-- Bouton CTA -->
       <div style="text-align:center;margin-bottom:8px;">
         <a href="${APP_URL}" style="display:inline-block;background:linear-gradient(135deg,#DC2626,#991B1B);color:#fff;padding:14px 32px;border-radius:10px;text-decoration:none;font-size:14px;font-weight:700;letter-spacing:0.02em;">
-          Ouvrir PleinGaz ERP →
+          Ouvrir PLEINGAZ
         </a>
       </div>
     </div>
@@ -117,7 +117,7 @@ function buildEmailHtml(params: {
     <!-- Footer -->
     <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-top:none;border-radius:0 0 16px 16px;padding:20px 28px;text-align:center;">
       <p style="font-size:11px;color:#9CA3AF;margin:0;">
-        Cet email a été envoyé automatiquement par PleinGaz ERP.<br>
+        Cet email a été envoyé automatiquement par PLEINGAZ.<br>
         © ${new Date().getFullYear()} INFOTECH SA — Tous droits réservés.
       </p>
     </div>
@@ -404,7 +404,7 @@ serve(async (req) => {
         'Authorization': `Bearer ${Deno.env.get('RESEND_API_KEY')}`,
       },
       body: JSON.stringify({
-        from: 'PleinGaz ERP <s.mfambou@monpleingaz.com>',
+        from: 'Pleingaz ERP <s.mfambou@monpleingaz.com>',
         to: Array.from(emails),
         subject,
         html,

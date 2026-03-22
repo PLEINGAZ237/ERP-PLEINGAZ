@@ -114,7 +114,7 @@ export default function PortailDashboard() {
               </svg>
             </div>
             <div>
-              <div style={styles.logoTitle}>PLEINGAZ ERP</div>
+              <div style={styles.logoTitle}>PLEINGAZ</div>
               <div style={styles.logoSub}>INFOTECH / WONDERFUL</div>
             </div>
           </div>

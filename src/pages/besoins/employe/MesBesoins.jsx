@@ -6,7 +6,7 @@ import EmployeLayout from '@/components/besoins/employe/EmployeLayout'
 
 const STATUT_STYLE = {
   EN_ATTENTE_DFC:          'bg-amber-100 text-amber-700',
-  EN_ATTENTE_DG:           'bg-blue-100 text-blue-700',
+  EN_ATTENTE_DG:           'bg-red-100 text-red-700',
   VALIDE_DG:               'bg-green-100 text-green-700',
   REJETE_DFC:              'bg-red-100 text-red-700',
   REJETE_DG:               'bg-red-100 text-red-700',
@@ -121,7 +121,7 @@ export default function MesBesoins() {
         <h1 className='text-xl md:text-2xl font-bold text-gray-800'>Historique des besoins</h1>
         <Link
           to='/besoins/employe/creer-besoin'
-          className='w-full sm:w-auto bg-blue-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-blue-700 text-center transition-all shadow-lg shadow-blue-500/20'
+          className='w-full sm:w-auto bg-red-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-red-700 text-center transition-all shadow-lg shadow-red-500/20'
         >
           + Nouveau besoin
         </Link>
@@ -131,7 +131,7 @@ export default function MesBesoins() {
         <div className='overflow-x-auto'>
           {loading ? (
             <div className='py-20 text-center'>
-              <div className='animate-spin inline-block w-6 h-6 border-[3px] border-current border-t-transparent text-blue-600 rounded-full mb-2' />
+              <div className='animate-spin inline-block w-6 h-6 border-[3px] border-current border-t-transparent text-red-600 rounded-full mb-2' />
               <p className='text-gray-400 text-xs font-medium'>Chargement de vos dossiers...</p>
             </div>
           ) : besoins.length === 0 ? (
@@ -156,7 +156,7 @@ export default function MesBesoins() {
                       onClick={(e) => handleRowClick(e, b)}
                       className={`transition-colors ${isClickable ? 'cursor-pointer hover:bg-gray-50/30' : ''}`}
                     >
-                      <td className='px-5 py-4 font-mono text-xs text-blue-600 font-medium'>{b.numero}</td>
+                      <td className='px-5 py-4 font-mono text-xs text-red-600 font-medium'>{b.numero}</td>
                       <td className='px-5 py-4 text-sm text-gray-600 max-w-[180px] truncate'>{b.description}</td>
                       <td className='px-5 py-4 text-sm font-semibold text-gray-800 whitespace-nowrap'>
                         {fmt(getMontant(b))}
@@ -169,7 +169,7 @@ export default function MesBesoins() {
                       <td className='px-5 py-4 text-gray-400 text-xs whitespace-nowrap'>{fmtDateTime(b.created_at)}</td>
                       <td className='px-5 py-4'>
                         {b.statut === 'EN_ATTENTE_DFC'
-                          ? <span className='text-blue-600 hover:text-blue-800 font-bold text-xs uppercase'>Modifier</span>
+                          ? <span className='text-red-600 hover:text-red-800 font-bold text-xs uppercase'>Modifier</span>
                           : DETAIL_STATUTS.includes(b.statut)
                             ? <span className='text-gray-500 font-bold text-xs uppercase'>Voir →</span>
                             : <span className='text-gray-300 text-xs'>—</span>
@@ -190,27 +190,27 @@ export default function MesBesoins() {
           <div className='bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl p-6 w-full max-w-lg'>
             <div className='w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6 sm:hidden' />
             <h3 className='text-lg font-black text-gray-800 mb-1'>Modifier le dossier</h3>
-            <p className='text-[10px] font-mono text-blue-500 mb-6 uppercase tracking-widest'>{selected.numero}</p>
+            <p className='text-[10px] font-mono text-red-500 mb-6 uppercase tracking-widest'>{selected.numero}</p>
             <form onSubmit={handleEdit} className='space-y-4'>
               <div>
                 <label className='block text-[10px] font-bold text-gray-400 uppercase mb-1'>Titre</label>
                 <textarea value={editForm.description} onChange={e => setEditForm({...editForm, description: e.target.value})}
-                  rows={3} className='w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none resize-none' required />
+                  rows={3} className='w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-red-500/20 outline-none resize-none' required />
               </div>
               <div>
                 <label className='block text-[10px] font-bold text-gray-400 uppercase mb-1'>Montant demandée (FCFA)</label>
                 <input type='number' value={editForm.montant} onChange={e => setEditForm({...editForm, montant: e.target.value})}
-                  className='w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none font-bold' required />
+                  className='w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-red-500/20 outline-none font-bold' required />
               </div>
               <div>
                 <label className='block text-[10px] font-bold text-gray-400 uppercase mb-1'>Détails</label>
                 <textarea value={editForm.justification} onChange={e => setEditForm({...editForm, justification: e.target.value})}
-                  rows={3} className='w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none resize-none' required />
+                  rows={3} className='w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-red-500/20 outline-none resize-none' required />
               </div>
               {error && <div className='p-3 bg-red-50 text-red-600 text-[11px] font-bold rounded-lg border border-red-100'>{error}</div>}
               <div className='flex gap-3 pt-4 pb-6 sm:pb-0'>
                 <button type='submit' disabled={saving}
-                  className='flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-blue-700 disabled:opacity-50'>
+                  className='flex-1 bg-red-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-red-700 disabled:opacity-50'>
                   {saving ? 'Enregistrement...' : 'Enregistrer'}
                 </button>
                 <button type='button' onClick={() => setShowEdit(false)}

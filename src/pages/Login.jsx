@@ -27,127 +27,365 @@ export default function Login() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500&display=swap');
-        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-        body{overflow:hidden;}
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Syne:wght@700;800&display=swap');
+        
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body { 
+          overflow-x: hidden; 
+          background-color: #fbfbfb; 
+          color: #1a1a1a;
+          font-family: 'Inter', sans-serif;
+        }
 
-        .lr{min-height:100vh;background:#fff;display:flex;font-family:'DM Sans',sans-serif;overflow:hidden;}
+        .pg-login-wrapper {
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          padding: 20px;
+          /* Motif de fond subtil */
+          background-image: 
+            radial-gradient(#e1e1e1 1px, transparent 1px), 
+            radial-gradient(#e1e1e1 1px, #fbfbfb 1px);
+          background-size: 40px 40px;
+          background-position: 0 0, 20px 20px;
+          animation: fadeIn 0.5s ease-out;
+        }
 
-        /* LEFT */
-        .ll{width:46%;background:#ff0000;position:relative;display:flex;flex-direction:column;justify-content:space-between;padding:52px 56px;overflow:hidden;}
-        .ll::before{content:'';position:absolute;top:-100px;right:-100px;width:380px;height:380px;border-radius:50%;background:rgba(255,255,255,0.07);}
-        .ll::after{content:'';position:absolute;bottom:-140px;left:-80px;width:460px;height:460px;border-radius:50%;background:rgba(0,0,0,0.07);}
-        .ll-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.04) 1px,transparent 1px);background-size:40px 40px;}
+        /* Décorations d'arrière-plan floues (Rouge et Blanc) */
+        .blob {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(80px);
+          opacity: 0.5;
+          z-index: 0;
+        }
+        .blob-1 {
+          top: 10%;
+          left: 10%;
+          width: 300px;
+          height: 300px;
+          background-color: rgba(255, 0, 0, 0.1);
+        }
+        .blob-2 {
+          bottom: 10%;
+          right: 10%;
+          width: 400px;
+          height: 400px;
+          background-color: rgba(255, 0, 0, 0.05);
+        }
 
-        .ll-brand{position:relative;z-index:2;display:inline-flex;align-items:center;gap:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:9px 16px;}
-        .ll-dot{width:8px;height:8px;background:#fff;border-radius:50%;}
-        .ll-brand-txt{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;letter-spacing:0.12em;text-transform:uppercase;color:#fff;}
+        .pg-card {
+          position: relative;
+          z-index: 1;
+          width: 100%;
+          max-width: 480px;
+          background: rgba(255, 255, 255, 0.8);
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 255, 255, 0.6);
+          border-radius: 24px;
+          padding: 50px 40px;
+          box-shadow: 0 20px 40px rgba(0,0,0,0.03);
+          transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
 
-        .ll-hero{position:relative;z-index:2;}
-        .ll-hero h1{font-family:'Syne',sans-serif;font-size:50px;font-weight:800;color:#fff;line-height:1.05;margin-bottom:18px;letter-spacing:-0.02em;}
-        .ll-hero p{font-size:15px;color:rgba(255,255,255,0.72);line-height:1.65;max-width:320px;font-weight:300;}
+        .pg-header {
+          text-align: center;
+          margin-bottom: 40px;
+        }
 
-        .ll-mods{position:relative;z-index:2;display:flex;flex-direction:column;gap:9px;}
-        .ll-mod{display:flex;align-items:center;gap:12px;padding:13px 16px;background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.13);border-radius:10px;}
-        .ll-mod-ic{width:30px;height:30px;background:rgba(255,255,255,0.18);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
-        .ll-mod-lbl{font-size:13px;font-weight:500;color:rgba(255,255,255,0.88);}
+        .pg-logo {
+          font-family: 'Syne', sans-serif;
+          font-size: 36px;
+          font-weight: 800;
+          color: #ff0000;
+          letter-spacing: -1.5px;
+          margin-bottom: 10px;
+          display: inline-block;
+        }
+        .pg-logo span {
+          color: #ff0000;
+        }
 
-        /* RIGHT */
-        .lr-r{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 64px;position:relative;}
-        .lr-r::after{content:'';position:absolute;top:0;right:0;width:220px;height:220px;background:repeating-linear-gradient(0deg,transparent,transparent 23px,#f0f0f0 23px,#f0f0f0 24px),repeating-linear-gradient(90deg,transparent,transparent 23px,#f0f0f0 23px,#f0f0f0 24px);opacity:.5;pointer-events:none;}
+        .pg-subtitle {
+          font-size: 15px;
+          color: #666;
+          font-weight: 400;
+          line-height: 1.5;
+          max-width: 300px;
+          margin: 0 auto;
+        }
 
-        .lf{width:100%;max-width:400px;}
-        .lf-head{margin-bottom:38px;}
-        .lf-head h2{font-family:'Syne',sans-serif;font-size:30px;font-weight:700;color:#111;letter-spacing:-0.02em;margin-bottom:6px;}
-        .lf-head p{font-size:14px;color:#999;font-weight:300;}
+        /* Formulaire */
+        .form-stack {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
 
-        .lf-field{margin-bottom:18px;}
-        .lf-field label{display:block;font-size:11px;font-weight:500;color:#666;text-transform:uppercase;letter-spacing:0.09em;margin-bottom:7px;}
-        .lf-iw{position:relative;}
-        .lf-in{width:100%;height:50px;border:1.5px solid #ebebeb;border-radius:10px;padding:0 16px;font-size:15px;font-family:'DM Sans',sans-serif;color:#111;background:#fafafa;outline:none;transition:border-color .2s,background .2s,box-shadow .2s;}
-        .lf-in:focus{border-color:#ff0000;background:#fff;box-shadow:0 0 0 4px rgba(255,0,0,0.07);}
-        .lf-in-p{padding-right:48px;}
-        .lf-eye{position:absolute;right:13px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:4px;color:#bbb;display:flex;align-items:center;transition:color .2s;}
-        .lf-eye:hover{color:#ff0000;}
+        .input-group label {
+          display: block;
+          font-size: 13px;
+          font-weight: 500;
+          color: #444;
+          margin-bottom: 8px;
+          margin-left: 2px;
+        }
 
-        .lf-err{display:flex;align-items:center;gap:8px;background:#fff5f5;border:1px solid #ffd0d0;border-radius:8px;padding:11px 14px;font-size:13px;color:#cc0000;margin-bottom:18px;}
+        .input-wrapper {
+          position: relative;
+        }
 
-        .lf-btn{width:100%;height:50px;background:#ff0000;color:#fff;border:none;border-radius:10px;font-family:'Syne',sans-serif;font-size:15px;font-weight:600;letter-spacing:0.02em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:background .2s,transform .15s,box-shadow .2s;box-shadow:0 4px 20px rgba(255,0,0,0.28);margin-top:6px;}
-        .lf-btn:hover:not(:disabled){background:#d40000;transform:translateY(-1px);box-shadow:0 6px 26px rgba(255,0,0,0.38);}
-        .lf-btn:active:not(:disabled){transform:translateY(0);}
-        .lf-btn:disabled{opacity:.65;cursor:not-allowed;}
+        .pg-input {
+          width: 100%;
+          height: 52px;
+          background: #fff;
+          border: 1px solid #e0e0e0;
+          border-radius: 12px;
+          padding: 0 16px;
+          font-size: 15px;
+          font-family: 'Inter', sans-serif;
+          color: #1a1a1a;
+          transition: all 0.2s ease;
+        }
 
-        .lf-spin{width:18px;height:18px;border:2.5px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;}
-        @keyframes spin{to{transform:rotate(360deg);}}
+        .pg-input::placeholder {
+          color: #aaa;
+        }
 
-        .lf-foot{margin-top:36px;font-size:12px;color:#ccc;text-align:center;}
-        .lf-foot span{color:#ff0000;font-weight:500;}
+        .pg-input:focus {
+          outline: none;
+          border-color: #ff0000;
+          box-shadow: 0 0 0 4px rgba(255, 0, 0, 0.1);
+        }
 
-        @media(max-width:860px){.ll{display:none;}.lr-r{padding:40px 24px;}}
+        /* Input mot de passe avec œil */
+        .pg-input-p {
+          padding-right: 50px;
+        }
+
+        .pass-toggle {
+          position: absolute;
+          right: 14px;
+          top: 50%;
+          transform: translateY(-50%);
+          background: none;
+          border: none;
+          cursor: pointer;
+          color: #bbb;
+          padding: 6px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 8px;
+          transition: all 0.2s;
+        }
+        .pass-toggle:hover {
+          color: #ff0000;
+          background-color: rgba(255,0,0,0.05);
+        }
+
+        /* Erreur */
+        .error-alert {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          background-color: #fff1f1;
+          border: 1px solid #ffcccc;
+          color: #cc0000;
+          padding: 14px;
+          border-radius: 12px;
+          font-size: 14px;
+          font-weight: 500;
+        }
+
+        /* Bouton */
+        .pg-submit-btn {
+          width: 100%;
+          height: 52px;
+          background-color: #ff0000;
+          color: #fff;
+          border: none;
+          border-radius: 12px;
+          font-size: 16px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          margin-top: 10px;
+          box-shadow: 0 4px 12px rgba(255, 0, 0, 0.2);
+        }
+
+        .pg-submit-btn:hover:not(:disabled) {
+          background-color: #e60000;
+          transform: translateY(-1px);
+          box-shadow: 0 6px 18px rgba(255, 0, 0, 0.3);
+        }
+
+        .pg-submit-btn:active:not(:disabled) {
+          transform: translateY(1px);
+        }
+
+        .pg-submit-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+          box-shadow: none;
+        }
+
+        /* Loader */
+        .spinner {
+          width: 20px;
+          height: 20px;
+          border: 2.5px solid rgba(255,255,255,0.3);
+          border-top-color: #fff;
+          border-radius: 50%;
+          animation: spin 0.7s linear infinite;
+        }
+
+        .pg-footer {
+          margin-top: 40px;
+          text-align: center;
+          font-size: 13px;
+          color: #888;
+          border-top: 1px solid #eee;
+          padding-top: 20px;
+        }
+        .pg-footer strong {
+          color: #ff0000;
+          font-weight: 600;
+        }
+
+        /* Animations */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Media Queries pour Super Responsivité */
+        
+        /* Tablettes et mobiles larges */
+        @media (max-width: 768px) {
+          .pg-card {
+            padding: 40px 30px;
+          }
+        }
+
+        /* Petits mobiles */
+        @media (max-width: 480px) {
+          .pg-login-wrapper {
+            padding: 0; /* Plus de padding extérieur */
+            background: #fff; /* Fond blanc uni sur mobile pour plus de clarté */
+          }
+          
+          .pg-card {
+            border-radius: 0;
+            border: none;
+            box-shadow: none;
+            height: 100vh; /* Pleine hauteur */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background: #fff;
+            padding: 30px;
+          }
+          
+          .blob { display: none; } /* Enlever les décos sur mobile */
+          
+          .pg-logo { font-size: 32px; }
+          .pg-input { height: 50px; }
+          .pg-submit-btn { height: 50px; }
+        }
+        
+        /* Hauteur d'écran courte */
+        @media (max-height: 600px) {
+          .pg-login-wrapper { align-items: flex-start; padding-top: 20px; }
+          .pg-card { height: auto; padding: 30px; }
+          .pg-header { margin-bottom: 25px; }
+          .pg-footer { margin-top: 25px; }
+        }
       `}</style>
 
-      <div className="lr">
-        <div className="ll">
-          <div className="ll-grid" />
-          <div className="ll-brand">
-            <div className="ll-dot" />
-            <span className="ll-brand-txt">ERP PLEINGAz</span>
-          </div>
-          <div className="ll-hero">
-            <h1>Gérez votre entreprise efficacement.</h1>
-            <p>Plateforme unifiée pour INFOTECH et WONDERFUL. Besoins, stock, dépotage et ressources humaines en un seul endroit.</p>
-          </div>
-          <div className="ll-mods">
-            {[["💼","Gestion des Besoins"],["📦","Gestion du Stock"],["🛢️","Dépotage"],["👥","Ressources Humaines"]].map(([ic,lbl])=>(
-              <div key={lbl} className="ll-mod">
-                <div className="ll-mod-ic">{ic}</div>
-                <span className="ll-mod-lbl">{lbl}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+      <div className="pg-login-wrapper">
+        <div className="blob blob-1"></div>
+        <div className="blob blob-2"></div>
 
-        <div className="lr-r">
-          <div className="lf">
-            <div className="lf-head">
-              <h2>Connexion</h2>
-              <p>Entrez vos identifiants pour accéder à la plateforme.</p>
-            </div>
+        <div className="pg-card">
+          <div className="pg-header">
+            <h1 className="pg-logo">PLEINGAZ</h1>
+            <p className="pg-subtitle">Connectez-vous pour accéder à votre espace de gestion unifié.</p>
+          </div>
 
+          <form onSubmit={handleSubmit} className="form-stack">
             {error && (
-              <div className="lf-err">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <div className="error-alert">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 {error}
               </div>
             )}
 
-            <form onSubmit={handleSubmit}>
-              <div className="lf-field">
-                <label>Adresse email</label>
-                <div className="lf-iw">
-                  <input className="lf-in" type="email" placeholder="vous@exemple.com"
-                    value={email} onChange={e=>setEmail(e.target.value)} required autoFocus />
-                </div>
+            <div className="input-group">
+              <label htmlFor="email">Adresse email</label>
+              <div className="input-wrapper">
+                <input 
+                  id="email"
+                  className="pg-input" 
+                  type="email" 
+                  placeholder="exemple@wonderful.com"
+                  value={email} 
+                  onChange={e => setEmail(e.target.value)} 
+                  required 
+                  autoFocus 
+                />
               </div>
-              <div className="lf-field">
-                <label>Mot de passe</label>
-                <div className="lf-iw">
-                  <input className="lf-in lf-in-p" type={showPass?"text":"password"} placeholder="••••••••"
-                    value={password} onChange={e=>setPassword(e.target.value)} required />
-                  <button type="button" className="lf-eye" onClick={()=>setShowPass(!showPass)}>
-                    {showPass
-                      ? <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                      : <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                    }
-                  </button>
-                </div>
-              </div>
-              <button className="lf-btn" type="submit" disabled={loading}>
-                {loading ? <span className="lf-spin" /> : <>Se connecter <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></>}
-              </button>
-            </form>
+            </div>
 
-            <div className="lf-foot">© 2025 <span>PLEINGAz</span> · INFOTECH / WONDERFUL</div>
+            <div className="input-group">
+              <label htmlFor="password">Mot de passe</label>
+              <div className="input-wrapper">
+                <input 
+                  id="password"
+                  className="pg-input pg-input-p" 
+                  type={showPass ? "text" : "password"} 
+                  placeholder="••••••••••••"
+                  value={password} 
+                  onChange={e => setPassword(e.target.value)} 
+                  required 
+                />
+                <button 
+                  type="button" 
+                  className="pass-toggle" 
+                  onClick={() => setShowPass(!showPass)}
+                  aria-label={showPass ? "Cacher le mot de passe" : "Afficher le mot de passe"}
+                >
+                  {showPass 
+                    ? <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                    : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  }
+                </button>
+              </div>
+            </div>
+
+            <button className="pg-submit-btn" type="submit" disabled={loading}>
+              {loading ? (
+                <div className="spinner" />
+              ) : (
+                <>
+                  Se connecter
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </>
+              )}
+            </button>
+          </form>
+
+          <div className="pg-footer">
+            © 2025 <strong>PLEINGAZ</strong> · Plateforme INFOTECH / WONDERFUL
           </div>
         </div>
       </div>
