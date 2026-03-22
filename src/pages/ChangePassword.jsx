@@ -30,7 +30,17 @@ export default function ChangePassword() {
       if (dbErr) throw dbErr;
       await fetchProfile(user.id);
       setSuccess(true);
-      setTimeout(() => navigate("/completer-profil"), 2000);
+      // Déterminer la destination après changement de mot de passe
+      const [{ data: freshProfile }, { data: adminRoles }] = await Promise.all([
+        supabase.from("profiles").select("profil_complete").eq("id", user.id).single(),
+        supabase.from("utilisateur_roles").select("roles(nom)").eq("user_id", user.id),
+      ]);
+      const isAdmin = (adminRoles ?? []).some(r => r.roles?.nom === "Admin");
+      const profilOk = freshProfile?.profil_complete;
+      const dest = profilOk
+        ? (isAdmin ? "/besoins/admin" : "/dashboard")
+        : "/completer-profil";
+      setTimeout(() => navigate(dest), 2000);
     } catch (err) { setError(err.message || "Erreur."); } finally { setLoading(false); }
   }
 

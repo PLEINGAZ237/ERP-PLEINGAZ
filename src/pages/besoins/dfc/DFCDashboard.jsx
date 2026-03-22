@@ -74,7 +74,7 @@ export default function DFCDashboard() {
     return b.montant_demande
   }
 
-  const montantLabel = filtre === 'VALIDES' ? 'Montant validé' : filtre === 'REJETES' ? 'Montant demandé' : 'Montant demandé'
+  const montantLabel = filtre === 'VALIDES' ? 'Montant validé DG' : filtre === 'REJETES' ? 'Montant demandé' : 'Montant demandé'
 
   // Mapping des styles pour éviter les classes dynamiques cassées
   const STATS_CARDS = [

@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const ALL_MODULES = [
   {
@@ -67,6 +67,12 @@ export default function PortailDashboard() {
   const greeting = hour < 12 ? "Bonjour" : hour < 18 ? "Bon après-midi" : "Bonsoir";
 
   const isAdmin = hasRole('Admin');
+
+  // Admin → redirection automatique vers le dashboard admin
+  useEffect(() => {
+    if (isAdmin) navigate('/besoins/admin', { replace: true });
+  }, [isAdmin, navigate]);
+
   const noService = !isAdmin && !profile?.service_id;
 
   // Calculer les modules accessibles

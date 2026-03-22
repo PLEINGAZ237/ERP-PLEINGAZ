@@ -1,7 +1,10 @@
+console.log('=== FICHIER VALIDERBESOINDG CHARGE ===')
+
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import DGLayout from '@/components/besoins/dg/DGLayout'
+import ChaineValidation from '@/components/besoins/ChaineValidation'
 import { ArrowLeft, Loader2, Plus, Trash2, AlertTriangle } from 'lucide-react'
 
 const fmt = (n) => Number(n).toLocaleString('fr-FR') + ' FCFA'
@@ -70,6 +73,7 @@ export default function ValiderBesoinDG() {
         const vdgList = b.validations_dg ?? []
         const lastVdg = vdgList[vdgList.length - 1] ?? null
         setDerniereVdg(lastVdg)
+        console.log('[DEBUG DG]', 'vdgList:', vdgList, 'lastVdg:', lastVdg)
 
         // Charger les répartitions existantes
         const existingRepartitions = lastVdg?.validations_dg_repartitions ?? []
@@ -275,6 +279,12 @@ export default function ValiderBesoinDG() {
                   <p className="text-xs text-gray-400">Validé DFC</p>
                   <p className="text-lg font-bold text-indigo-700">{fmt(derniereVdfc.montant_valide)}</p>
                   {derniereVdfc.commentaire && <p className="text-xs text-gray-400 mt-1 italic">{derniereVdfc.commentaire}</p>}
+                </div>
+              )}
+              {derniereVdg && derniereVdg.montant_valide && (
+                <div>
+                  <p className="text-xs text-gray-400">Validé DG</p>
+                  <p className="text-lg font-bold text-emerald-700">{fmt(derniereVdg.montant_valide)}</p>
                 </div>
               )}
             </div>
@@ -563,6 +573,9 @@ export default function ValiderBesoinDG() {
           )}
         </div>
       </div>
+
+      {/* Circuit de validation complet */}
+      <ChaineValidation besoinId={id} />
 
       {/* Modal confirmation */}
       {confirmAction && (

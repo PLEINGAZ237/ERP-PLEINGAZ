@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import DFCLayout from '@/components/besoins/dfc/DFCLayout'
+import ChaineValidation from '@/components/besoins/ChaineValidation'
 import { Loader2, ArrowLeft } from 'lucide-react'
 
 const STATUT_STYLE = {
@@ -247,16 +248,19 @@ export default function ValiderBesoin() {
         </div>
       </div>
 
+      {/* Circuit de validation complet */}
+      <ChaineValidation besoinId={id} />
+
       {/* Modal confirmation — bottom sheet mobile, centered desktop */}
       {confirmAction && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-end md:items-center justify-center z-50" onClick={() => setConfirmAction(null)}>
           <div className="bg-white w-full md:max-w-sm md:rounded-xl rounded-t-2xl p-6 shadow-xl" onClick={e => e.stopPropagation()}>
             <h3 className="font-bold text-gray-800 mb-2">Confirmer l'action ?</h3>
-            <p className="text-sm text-gray-500 mb-5">
+            {/* <p className="text-sm text-gray-500 mb-5">
               {confirmAction === 'valide' ? 'Valider ce besoin et le transmettre au DG.' :
                confirmAction === 'rejete' ? 'Rejeter ce besoin.' :
                'Réactiver ce besoin pour un nouveau traitement.'}
-            </p>
+            </p> */}
             <div className="flex gap-3">
               <button onClick={() => setConfirmAction(null)} className="flex-1 py-2.5 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 font-medium transition-colors">Annuler</button>
               <button onClick={() => handleAction(confirmAction)} disabled={saving}

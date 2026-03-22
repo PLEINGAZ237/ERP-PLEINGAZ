@@ -28,6 +28,12 @@ export default function Utilisateurs() {
 
   const [createForm, setCreateForm] = useState({ email: '', password: '' })
 
+  // Reset password
+  const [showResetPwd, setShowResetPwd] = useState(false)
+  const [resetTarget, setResetTarget]   = useState(null)
+  const [newPassword, setNewPassword]   = useState('')
+  const [resetSuccess, setResetSuccess] = useState('')
+
   const [editForm, setEditForm] = useState({
     nom: '', prenom: '', entreprise_id: '', departement_id: '', service_id: '', isAdmin: false, caisse_id: '',
   })
@@ -221,6 +227,44 @@ export default function Utilisateurs() {
     load()
   }
 
+  // --- RÉINITIALISER MOT DE PASSE ---
+  const openResetPwd = (user) => {
+    setResetTarget(user)
+    setNewPassword('')
+    setResetSuccess('')
+    setError('')
+    setShowResetPwd(true)
+  }
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault()
+    setError('')
+    setResetSuccess('')
+    if (!newPassword || newPassword.length < 6) {
+      setError('Le mot de passe doit contenir au moins 6 caractères.')
+      return
+    }
+    setSaving(true)
+    const { data, error: fnError } = await supabase.functions.invoke('reset-password', {
+      body: { user_id: resetTarget.id, new_password: newPassword },
+    })
+    setSaving(false)
+    if (fnError) {
+      // Edge Function peut retourner l'erreur dans le body
+      try {
+        const body = JSON.parse(fnError.message)
+        setError(body.error || fnError.message)
+      } catch {
+        setError(fnError.message)
+      }
+      return
+    }
+    if (data?.error) { setError(data.error); return }
+    setResetSuccess(`Mot de passe de ${resetTarget.email} réinitialisé avec succès.`)
+    setNewPassword('')
+    setTimeout(() => { setShowResetPwd(false); setResetSuccess('') }, 2500)
+  }
+
   // --- Changement de département → réinitialise le service et la caisse ---
   const handleDepartementChange = (value) => {
     setEditForm((f) => ({ ...f, departement_id: value, service_id: '', caisse_id: '' }))
@@ -331,6 +375,7 @@ export default function Utilisateurs() {
                     <td className="px-4 py-3">
                       <div className="flex gap-3">
                         <button onClick={() => openEdit(user)} className="text-blue-600 hover:underline text-xs">Modifier</button>
+                        <button onClick={() => openResetPwd(user)} className="text-amber-600 hover:underline text-xs">Réinit. MDP</button>
                         <button
                           onClick={() => toggleStatut(user)}
                           className={`text-xs hover:underline ${user.statut === 'actif' ? 'text-red-500' : 'text-green-600'}`}
@@ -531,6 +576,53 @@ export default function Utilisateurs() {
                 <button type="submit" disabled={saving}
                   className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
                   {saving ? 'Enregistrement...' : 'Enregistrer'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* ===== MODAL : RÉINITIALISER MOT DE PASSE ===== */}
+      {showResetPwd && resetTarget && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
+            <h3 className="text-lg font-bold mb-1">Réinitialiser le mot de passe</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Utilisateur : <strong>{resetTarget.prenom ?? ''} {resetTarget.nom ?? ''}</strong>
+              <br />
+              <span className="text-xs text-gray-400">{resetTarget.email}</span>
+            </p>
+
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Nouveau mot de passe <span className="text-red-500">*</span></label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  placeholder="Minimum 6 caractères"
+                  minLength={6}
+                  required
+                />
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <p className="text-xs text-amber-700">
+                  <strong>Attention :</strong> l'utilisateur devra se connecter avec ce nouveau mot de passe.
+                  Il sera ensuite invité à le changer à sa prochaine connexion.
+                </p>
+              </div>
+
+              {error && <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
+              {resetSuccess && <p className="text-green-700 text-sm bg-green-50 border border-green-200 rounded-lg px-3 py-2">{resetSuccess}</p>}
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => { setShowResetPwd(false); setError('') }}
+                  className="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50">Annuler</button>
+                <button type="submit" disabled={saving}
+                  className="px-4 py-2 text-sm bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50 font-medium">
+                  {saving ? 'En cours...' : 'Réinitialiser'}
                 </button>
               </div>
             </form>

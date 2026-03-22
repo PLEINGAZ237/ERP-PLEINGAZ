@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import EmployeLayout from '@/components/besoins/employe/EmployeLayout'
+import DocumentsBesoin from '@/components/besoins/DocumentsBesoin'
 
 const fmt = (n) => n != null ? Number(n).toLocaleString('fr-FR') + ' FCFA' : '—'
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) : '—'
@@ -159,6 +160,20 @@ export default function DetailBesoin() {
           </p>
         </div>
       </div>
+
+      {/* Documents joints */}
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-5">
+        <h2 className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-3">
+          Pièces jointes
+          {s === 'EN_ATTENTE_DFC' && <span className="text-blue-400 normal-case font-normal ml-1">(vous pouvez ajouter ou supprimer)</span>}
+        </h2>
+        <DocumentsBesoin besoinId={id} editable={s === 'EN_ATTENTE_DFC'} />
+      </div>
+
+      {/* ══ EN_ATTENTE_DFC ══ */}
+      {s === 'EN_ATTENTE_DFC' && (
+        <BlocDemandeur besoin={besoin} />
+      )}
 
       {/* ══ EN_ATTENTE_DG ══ */}
       {s === 'EN_ATTENTE_DG' && (

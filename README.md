@@ -17,6 +17,7 @@ If you are developing a production application, we recommend using TypeScript wi
 
 
 
+
 ```
 ERP-PLEINGAZ
 ├─ README.md
@@ -41,6 +42,7 @@ ERP-PLEINGAZ
 │  │  │  ├─ AdminLayout.jsx
 │  │  │  └─ CrudTable.jsx
 │  │  └─ besoins
+│  │     ├─ ChaineValidation.jsx
 │  │     ├─ analyse
 │  │     │  └─ AnalyseLayout.jsx
 │  │     ├─ caissiere

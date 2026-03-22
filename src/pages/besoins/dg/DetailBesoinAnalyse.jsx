@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import AnalyseLayout from '@/components/besoins/analyse/AnalyseLayout'
+import DocumentsBesoin from '@/components/besoins/DocumentsBesoin'
 import { Loader2, ArrowLeft } from 'lucide-react'
 
 const fmt = (n) => n != null ? Number(n).toLocaleString('fr-FR') + ' FCFA' : '—'
@@ -155,6 +156,13 @@ export default function DetailBesoinAnalyse() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-6">
             <h2 className="text-[10px] font-bold text-gray-400 uppercase mb-4">Chaîne de validation</h2>
             <div className="space-y-4">
+
+              {/* Documents joints par l'émetteur */}
+              <div className="rounded-lg p-3 bg-gray-50 border border-gray-200">
+                <p className="text-xs font-bold text-gray-500 uppercase mb-2">Documents joints par l'émetteur</p>
+                <DocumentsBesoin besoinId={id} editable={false} />
+              </div>
+
               {/* DFC */}
               {(vdfcAll) && (
                 <div className={`rounded-lg p-3 ${s === 'REJETE_DFC' ? 'bg-red-50 border border-red-100' : 'bg-indigo-50 border border-indigo-100'}`}>
