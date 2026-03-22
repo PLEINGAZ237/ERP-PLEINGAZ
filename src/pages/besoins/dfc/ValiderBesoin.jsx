@@ -226,7 +226,13 @@ export default function ValiderBesoin() {
                   className="flex-1 py-3 bg-emerald-600 text-white rounded-lg text-sm font-bold shadow-sm hover:bg-emerald-700 transition-colors">
                   Valider
                 </button>
-                <button onClick={() => setConfirmAction('rejete')}
+                <button onClick={() => {
+                    if (!form.commentaire.trim()) {
+                      setError('Le commentaire est obligatoire en cas de rejet.')
+                      return
+                    }
+                    setConfirmAction('rejete')
+                  }}
                   className="flex-1 py-3 bg-red-600 text-white rounded-lg text-sm font-bold shadow-sm hover:bg-red-700 transition-colors">
                   Rejeter
                 </button>
@@ -238,12 +244,12 @@ export default function ValiderBesoin() {
                 {saving ? 'Mise à jour...' : 'Mettre à jour la validation'}
               </button>
             )}
-            {s === 'REJETE_DFC' && (
+            {/* {s === 'REJETE_DFC' && (
               <button onClick={() => setConfirmAction('reactiver')}
                 className="w-full py-3 bg-emerald-600 text-white rounded-lg text-sm font-bold shadow-sm hover:bg-emerald-700 transition-colors">
                 Réactiver ce besoin
               </button>
-            )}
+            )} */}
           </div>
         </div>
       </div>
