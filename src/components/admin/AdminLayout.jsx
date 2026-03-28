@@ -15,6 +15,12 @@ import {
   List,
   Network,
   Box,
+  Package,
+  Truck,
+  Tags,
+  DollarSign,
+  UserCheck,
+  MapPin,
 } from 'lucide-react'
 
 const NAV = [
@@ -28,11 +34,17 @@ const NAV = [
   { path: '/admin/departements', label: 'Départements', icon: List },
   { path: '/admin/services', label: 'Services', icon: Network },
   { path: '/admin/modules', label: 'Modules', icon: Box },
-  { path: '/admin/caisses', label: 'Caisses', icon: CreditCard },
   { path: '/admin/agences', label: 'Agences', icon: Building2 },
   { path: '/admin/magasins', label: 'Magasins', icon: Warehouse },
-  { path: '/admin/citernes', label: 'Citernes', icon: Fuel },
+  { path: '/admin/caisses', label: 'Caisses', icon: CreditCard },
   { path: '/admin/banques', label: 'Banques', icon: Landmark },
+  { path: '/admin/citernes', label: 'Citernes', icon: Fuel },
+  { path: '/admin/articles', label: 'Articles', icon: Package },
+  { path: '/admin/vehicules', label: 'Véhicules', icon: Truck },
+  { path: '/admin/itineraires', label: 'Itinéraires', icon: MapPin },
+  { path: '/admin/categories-clients', label: 'Catégories clients', icon: Tags },
+  { path: '/admin/clients', label: 'Clients', icon: UserCheck },
+  { path: '/admin/prix', label: 'Grille de prix', icon: DollarSign },
   { path: '/admin/utilisateurs', label: 'Utilisateurs', icon: Users },
 ]
 

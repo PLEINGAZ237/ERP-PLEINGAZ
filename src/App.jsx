@@ -27,6 +27,57 @@ import Banques             from './pages/admin/Banques'
 import Virements           from './pages/admin/Virements'
 import Roles               from './pages/admin/Roles'
 import Utilisateurs        from './pages/admin/Utilisateurs'
+import Articles            from './pages/admin/Articles'
+import Vehicules           from './pages/admin/Vehicules'
+import CategoriesClients   from './pages/admin/CategoriesClients'
+import PrixCategories      from './pages/admin/PrixCategories'
+import Clients             from './pages/admin/Clients'
+import Itineraires         from './pages/admin/Itineraires'
+
+// ── Module Commercial : routeur + layouts ───────────────────────────────────
+import CommercialDashboard from './pages/commercial/CommercialDashboard'
+import CommDashboard       from './pages/commercial/comm/CommDashboard'
+import CreerCommande       from './pages/commercial/shared/CreerCommande'
+import ListeCommandes      from './pages/commercial/shared/ListeCommandes'
+import DetailCommande      from './pages/commercial/shared/DetailCommande'
+import AgenceDashboard     from './pages/commercial/agence/AgenceDashboard'
+import CreerSortie         from './pages/commercial/agence/CreerSortie'
+import ListeSorties        from './pages/commercial/agence/ListeSorties'
+import VenteDashboard      from './pages/commercial/vente/VenteDashboard'
+import MagasinDashboard    from './pages/commercial/magasin/MagasinDashboard'
+import Livraisons          from './pages/commercial/magasin/Livraisons'
+import CaisseDashboard     from './pages/commercial/caisse/CaisseDashboard'
+import DGCommDashboard     from './pages/commercial/dg/DGCommDashboard'
+import RapportsCaisse      from './pages/commercial/dg/RapportsCaisse'
+import RapportsStock       from './pages/commercial/dg/RapportsStock'
+import InventairesPage     from './pages/commercial/dg/Inventaires'
+import JournalAudit        from './pages/commercial/dg/JournalAudit'
+import GestionCaisse       from './pages/commercial/caisse/GestionCaisse'
+import Encaissements       from './pages/commercial/caisse/Encaissements'
+import GestionStock        from './pages/commercial/magasin/GestionStock'
+import StockMagasin        from './pages/commercial/magasin/StockMagasin'
+import StockVehicule       from './pages/commercial/vente/StockVehicule'
+import CaisseVente         from './pages/commercial/vente/CaisseVente'
+import BouclerVente        from './pages/commercial/vente/BouclerVente'
+import ListeFactures       from './pages/commercial/shared/ListeFactures'
+import ListeClientsComm    from './pages/commercial/shared/ListeClientsComm'
+import ValidationsClotures from './pages/commercial/agence/ValidationsClotures'
+import VersementsCommerciaux from './pages/commercial/caisse/VersementsCommerciaux'
+import MesRapportsCaisse   from './pages/commercial/caisse/MesRapportsCaisse'
+import MesRapportsStock    from './pages/commercial/magasin/MesRapportsStock'
+import AnalysesVentes      from './pages/commercial/shared/AnalysesVentes'
+import RetoursProduits     from './pages/commercial/agence/RetoursProduits'
+import DGRetours           from './pages/commercial/dg/DGRetours'
+import TransfertsCaisse    from './pages/commercial/caisse/TransfertsCaisse'
+import CommLayout          from './components/commercial/CommLayout'
+import RespAgenceLayout    from './components/commercial/RespAgenceLayout'
+import VenteLayout         from './components/commercial/VenteLayout'
+import MagasinLayout       from './components/commercial/MagasinLayout'
+import CaisseLayout        from './components/commercial/CaisseLayout'
+import DGCommLayout        from './components/commercial/DGCommLayout'
+import AuditLayout         from './components/commercial/AuditLayout'
+import AuditDashboard      from './pages/commercial/audit/AuditDashboard'
+import EcartsAudit         from './pages/commercial/audit/EcartsAudit'
 
 // ── Module Besoins : Employé ─────────────────────────────────────────────────
 import EmployeDashboard    from './pages/besoins/employe/EmployeDashboard'
@@ -67,6 +118,7 @@ import SaisirJustificatif  from './pages/besoins/justif/SaisirJustificatif'
 */
 
 const BESOINS_ALL = ['emet_besoin', 'DFC', 'DG', 'analyse_besoin', 'decaissement', 'Justif']
+const COMMERCIAL_ALL = ['COMM', 'RESP_AGENCE', 'VENTE', 'CAISSE', 'MAGASIN', 'DG', 'AUDIT']
 
 function App() {
   return (
@@ -101,6 +153,84 @@ function App() {
           <Route path="/admin/virements"    element={<ProtectedRoute roles={['Admin']}><Virements /></ProtectedRoute>} />
           <Route path="/admin/roles"        element={<ProtectedRoute roles={['Admin']}><Roles /></ProtectedRoute>} />
           <Route path="/admin/utilisateurs" element={<ProtectedRoute roles={['Admin']}><Utilisateurs /></ProtectedRoute>} />
+          <Route path="/admin/articles"            element={<ProtectedRoute roles={['Admin']}><Articles /></ProtectedRoute>} />
+          <Route path="/admin/vehicules"           element={<ProtectedRoute roles={['Admin']}><Vehicules /></ProtectedRoute>} />
+          <Route path="/admin/categories-clients"  element={<ProtectedRoute roles={['Admin']}><CategoriesClients /></ProtectedRoute>} />
+          <Route path="/admin/prix"                element={<ProtectedRoute roles={['Admin']}><PrixCategories /></ProtectedRoute>} />
+          <Route path="/admin/clients"             element={<ProtectedRoute roles={['Admin']}><Clients /></ProtectedRoute>} />
+          <Route path="/admin/itineraires"         element={<ProtectedRoute roles={['Admin']}><Itineraires /></ProtectedRoute>} />
+
+          {/* ── Module Commercial : routeur de rôle ────────────────── */}
+          <Route path="/commercial" element={<ProtectedRoute><CommercialDashboard /></ProtectedRoute>} />
+
+          {/* ── Commercial : COMM ───────────────────────────────────── */}
+          <Route path="/commercial/comm"                      element={<ProtectedRoute module="commercial" moduleRoles={['COMM']}><CommDashboard /></ProtectedRoute>} />
+          <Route path="/commercial/comm/commandes"            element={<ProtectedRoute module="commercial" moduleRoles={['COMM']}><ListeCommandes Layout={CommLayout} basePath="/commercial/comm/commandes" creerPath="/commercial/comm/commandes/creer" /></ProtectedRoute>} />
+          <Route path="/commercial/comm/commandes/creer"      element={<ProtectedRoute module="commercial" moduleRoles={['COMM']}><CreerCommande Layout={CommLayout} backPath="/commercial/comm" /></ProtectedRoute>} />
+          <Route path="/commercial/comm/commandes/:id"        element={<ProtectedRoute module="commercial" moduleRoles={['COMM']}><DetailCommande Layout={CommLayout} backPath="/commercial/comm/commandes" /></ProtectedRoute>} />
+          <Route path="/commercial/comm/factures"             element={<ProtectedRoute module="commercial" moduleRoles={['COMM']}><ListeFactures Layout={CommLayout} basePath="/commercial/comm/commandes" /></ProtectedRoute>} />
+          <Route path="/commercial/comm/clients"              element={<ProtectedRoute module="commercial" moduleRoles={['COMM']}><ListeClientsComm Layout={CommLayout} /></ProtectedRoute>} />
+          <Route path="/commercial/comm/analyses"             element={<ProtectedRoute module="commercial" moduleRoles={['COMM']}><AnalysesVentes Layout={CommLayout} /></ProtectedRoute>} />
+
+          {/* ── Commercial : Resp Agence ────────────────────────────── */}
+          <Route path="/commercial/agence"                    element={<ProtectedRoute module="commercial" moduleRoles={['RESP_AGENCE']}><AgenceDashboard /></ProtectedRoute>} />
+          <Route path="/commercial/agence/commandes"          element={<ProtectedRoute module="commercial" moduleRoles={['RESP_AGENCE']}><ListeCommandes Layout={RespAgenceLayout} basePath="/commercial/agence/commandes" creerPath="/commercial/agence/commandes/creer" /></ProtectedRoute>} />
+          <Route path="/commercial/agence/commandes/creer"    element={<ProtectedRoute module="commercial" moduleRoles={['RESP_AGENCE']}><CreerCommande Layout={RespAgenceLayout} backPath="/commercial/agence" /></ProtectedRoute>} />
+          <Route path="/commercial/agence/commandes/:id"      element={<ProtectedRoute module="commercial" moduleRoles={['RESP_AGENCE']}><DetailCommande Layout={RespAgenceLayout} backPath="/commercial/agence/commandes" /></ProtectedRoute>} />
+          <Route path="/commercial/agence/sorties"            element={<ProtectedRoute module="commercial" moduleRoles={['RESP_AGENCE']}><ListeSorties /></ProtectedRoute>} />
+          <Route path="/commercial/agence/sorties/creer"      element={<ProtectedRoute module="commercial" moduleRoles={['RESP_AGENCE']}><CreerSortie /></ProtectedRoute>} />
+          <Route path="/commercial/agence/factures"           element={<ProtectedRoute module="commercial" moduleRoles={['RESP_AGENCE']}><ListeFactures Layout={RespAgenceLayout} basePath="/commercial/agence/commandes" /></ProtectedRoute>} />
+          <Route path="/commercial/agence/clients"            element={<ProtectedRoute module="commercial" moduleRoles={['RESP_AGENCE']}><ListeClientsComm Layout={RespAgenceLayout} /></ProtectedRoute>} />
+          <Route path="/commercial/agence/validations"        element={<ProtectedRoute module="commercial" moduleRoles={['RESP_AGENCE']}><ValidationsClotures /></ProtectedRoute>} />
+          <Route path="/commercial/agence/retours"            element={<ProtectedRoute module="commercial" moduleRoles={['RESP_AGENCE']}><RetoursProduits /></ProtectedRoute>} />
+
+          {/* ── Commercial : Vente (commercial terrain) ────────────── */}
+          <Route path="/commercial/vente"                     element={<ProtectedRoute module="commercial" moduleRoles={['VENTE']}><VenteDashboard /></ProtectedRoute>} />
+          <Route path="/commercial/vente/commandes"           element={<ProtectedRoute module="commercial" moduleRoles={['VENTE']}><ListeCommandes Layout={VenteLayout} basePath="/commercial/vente/commandes" creerPath="/commercial/vente/commandes/creer" /></ProtectedRoute>} />
+          <Route path="/commercial/vente/commandes/creer"     element={<ProtectedRoute module="commercial" moduleRoles={['VENTE']}><CreerCommande Layout={VenteLayout} backPath="/commercial/vente" /></ProtectedRoute>} />
+          <Route path="/commercial/vente/commandes/:id"       element={<ProtectedRoute module="commercial" moduleRoles={['VENTE']}><DetailCommande Layout={VenteLayout} backPath="/commercial/vente/commandes" /></ProtectedRoute>} />
+          <Route path="/commercial/vente/factures"            element={<ProtectedRoute module="commercial" moduleRoles={['VENTE']}><ListeFactures Layout={VenteLayout} basePath="/commercial/vente/commandes" /></ProtectedRoute>} />
+          <Route path="/commercial/vente/stock"               element={<ProtectedRoute module="commercial" moduleRoles={['VENTE']}><StockVehicule /></ProtectedRoute>} />
+          <Route path="/commercial/vente/caisse"              element={<ProtectedRoute module="commercial" moduleRoles={['VENTE']}><CaisseVente /></ProtectedRoute>} />
+          <Route path="/commercial/vente/boucler"             element={<ProtectedRoute module="commercial" moduleRoles={['VENTE']}><BouclerVente /></ProtectedRoute>} />
+
+          {/* ── Commercial : Caisse ─────────────────────────────────── */}
+          <Route path="/commercial/caisse"                    element={<ProtectedRoute module="commercial" moduleRoles={['CAISSE']}><CaisseDashboard /></ProtectedRoute>} />
+          <Route path="/commercial/caisse/gestion"              element={<ProtectedRoute module="commercial" moduleRoles={['CAISSE']}><GestionCaisse /></ProtectedRoute>} />
+          <Route path="/commercial/caisse/commandes"          element={<ProtectedRoute module="commercial" moduleRoles={['CAISSE']}><ListeCommandes Layout={CaisseLayout} basePath="/commercial/caisse/commandes" creerPath="/commercial/caisse/commandes/creer" /></ProtectedRoute>} />
+          <Route path="/commercial/caisse/commandes/creer"    element={<ProtectedRoute module="commercial" moduleRoles={['CAISSE']}><CreerCommande Layout={CaisseLayout} backPath="/commercial/caisse" /></ProtectedRoute>} />
+          <Route path="/commercial/caisse/commandes/:id"      element={<ProtectedRoute module="commercial" moduleRoles={['CAISSE']}><DetailCommande Layout={CaisseLayout} backPath="/commercial/caisse/commandes" /></ProtectedRoute>} />
+          <Route path="/commercial/caisse/factures"           element={<ProtectedRoute module="commercial" moduleRoles={['CAISSE']}><ListeFactures Layout={CaisseLayout} basePath="/commercial/caisse/commandes" /></ProtectedRoute>} />
+          <Route path="/commercial/caisse/encaissements"      element={<ProtectedRoute module="commercial" moduleRoles={['CAISSE']}><Encaissements /></ProtectedRoute>} />
+          <Route path="/commercial/caisse/versements"         element={<ProtectedRoute module="commercial" moduleRoles={['CAISSE']}><VersementsCommerciaux /></ProtectedRoute>} />
+          <Route path="/commercial/caisse/mes-rapports"       element={<ProtectedRoute module="commercial" moduleRoles={['CAISSE']}><MesRapportsCaisse /></ProtectedRoute>} />
+          <Route path="/commercial/caisse/transferts"         element={<ProtectedRoute module="commercial" moduleRoles={['CAISSE']}><TransfertsCaisse /></ProtectedRoute>} />
+
+          {/* ── Commercial : Magasin ────────────────────────────────── */}
+          <Route path="/commercial/magasin"                   element={<ProtectedRoute module="commercial" moduleRoles={['MAGASIN']}><MagasinDashboard /></ProtectedRoute>} />
+          <Route path="/commercial/magasin/gestion"             element={<ProtectedRoute module="commercial" moduleRoles={['MAGASIN']}><GestionStock /></ProtectedRoute>} />
+          <Route path="/commercial/magasin/stock"               element={<ProtectedRoute module="commercial" moduleRoles={['MAGASIN']}><StockMagasin /></ProtectedRoute>} />
+          <Route path="/commercial/magasin/livraisons"        element={<ProtectedRoute module="commercial" moduleRoles={['MAGASIN']}><Livraisons /></ProtectedRoute>} />
+          <Route path="/commercial/magasin/mes-rapports"      element={<ProtectedRoute module="commercial" moduleRoles={['MAGASIN']}><MesRapportsStock /></ProtectedRoute>} />
+
+          {/* ── Commercial : DG (validation dettes + audit + rapports) ── */}
+          <Route path="/commercial/dg"                        element={<ProtectedRoute module="commercial" moduleRoles={['DG']}><DGCommDashboard /></ProtectedRoute>} />
+          <Route path="/commercial/dg/dettes"                 element={<ProtectedRoute module="commercial" moduleRoles={['DG']}><DGCommDashboard /></ProtectedRoute>} />
+          <Route path="/commercial/dg/rapports-caisse"        element={<ProtectedRoute module="commercial" moduleRoles={['DG']}><RapportsCaisse /></ProtectedRoute>} />
+          <Route path="/commercial/dg/rapports-stock"         element={<ProtectedRoute module="commercial" moduleRoles={['DG']}><RapportsStock /></ProtectedRoute>} />
+          <Route path="/commercial/dg/inventaires"            element={<ProtectedRoute module="commercial" moduleRoles={['DG']}><InventairesPage /></ProtectedRoute>} />
+          <Route path="/commercial/dg/audit"                  element={<ProtectedRoute module="commercial" moduleRoles={['DG']}><JournalAudit /></ProtectedRoute>} />
+          <Route path="/commercial/dg/analyses"               element={<ProtectedRoute module="commercial" moduleRoles={['DG']}><AnalysesVentes Layout={DGCommLayout} /></ProtectedRoute>} />
+          <Route path="/commercial/dg/retours"                element={<ProtectedRoute module="commercial" moduleRoles={['DG']}><DGRetours /></ProtectedRoute>} />
+
+          {/* ── Commercial : AUDIT ─────────────────────────────────── */}
+          <Route path="/commercial/audit"                     element={<ProtectedRoute module="commercial" moduleRoles={['AUDIT']}><AuditDashboard /></ProtectedRoute>} />
+          <Route path="/commercial/audit/ecarts"              element={<ProtectedRoute module="commercial" moduleRoles={['AUDIT']}><EcartsAudit /></ProtectedRoute>} />
+          <Route path="/commercial/audit/rapports-caisse"     element={<ProtectedRoute module="commercial" moduleRoles={['AUDIT']}><RapportsCaisse Layout={AuditLayout} /></ProtectedRoute>} />
+          <Route path="/commercial/audit/rapports-stock"      element={<ProtectedRoute module="commercial" moduleRoles={['AUDIT']}><RapportsStock Layout={AuditLayout} /></ProtectedRoute>} />
+          <Route path="/commercial/audit/inventaires"         element={<ProtectedRoute module="commercial" moduleRoles={['AUDIT']}><InventairesPage Layout={AuditLayout} /></ProtectedRoute>} />
+          <Route path="/commercial/audit/journal"             element={<ProtectedRoute module="commercial" moduleRoles={['AUDIT']}><JournalAudit Layout={AuditLayout} /></ProtectedRoute>} />
+          <Route path="/commercial/audit/analyses"            element={<ProtectedRoute module="commercial" moduleRoles={['AUDIT']}><AnalysesVentes Layout={AuditLayout} /></ProtectedRoute>} />
 
           {/* ── Besoins : Employé (tous les rôles besoins) ────────── */}
           <Route path="/besoins/employe"               element={<ProtectedRoute module="besoins" moduleRoles={BESOINS_ALL}><EmployeDashboard /></ProtectedRoute>} />

@@ -12,6 +12,14 @@ const ALL_MODULES = [
     developed: true,
   },
   {
+    code: "commercial",
+    icon: "🛒",
+    title: "Module Commercial",
+    desc: "Commandes, facturation, règlements, livraisons et gestion des ventes.",
+    route: "/commercial",
+    developed: true,
+  },
+  {
     code: "stock",
     icon: "📦",
     title: "Gestion du Stock",
