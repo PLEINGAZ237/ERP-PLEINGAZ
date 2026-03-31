@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
+import { genererFacturePDF, genererBonLivraisonPDF } from '@/lib/generatePDF'
 import CommLayout from '@/components/commercial/CommLayout'
-import { ArrowLeft, Loader2, FileText, CreditCard, Plus, Trash2 } from 'lucide-react'
+import { ArrowLeft, Loader2, FileText, CreditCard, Plus, Trash2, Download } from 'lucide-react'
 
 const fmt = (n) => n != null ? Number(n).toLocaleString('fr-FR') + ' F' : '—'
 const STATUT_STYLE = {
@@ -133,6 +134,12 @@ export default function DetailCommande({ Layout = CommLayout, backPath = '/comme
                 <p className="text-sm text-blue-700">Total : {fmt(facture.montant_total)}</p>
                 <p className="text-sm text-blue-700">Réglé : {fmt(facture.montant_regle)}</p>
                 {facture.montant_dette > 0 && <p className="text-sm text-red-600 font-bold">Dette : {fmt(facture.montant_dette)}</p>}
+                <div className="flex gap-2 mt-3">
+                  <button onClick={() => genererFacturePDF(facture, commande, commande.lignes_commande, { nom_interne: commande.clients?.nom_interne, ville: commande.clients?.ville, quartier: commande.clients?.quartier, telephone: commande.clients?.telephone, categorie: commande.clients?.categories_clients?.nom }, facture.reglements)}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700">
+                    <Download size={12} /> Facture PDF
+                  </button>
+                </div>
               </div>
             )}
           </div>
