@@ -27,9 +27,7 @@ export default function StockMagasin() {
         .order('date_journee', { ascending: false }).limit(1).maybeSingle()
       if (js) {
         const { data: lg } = await supabase.from('lignes_journee_stock')
-          .select('*, articles(nom, categorie)')
-          .eq('journee_stock_id', js.id)
-          .order('articles(categorie), articles(nom)')
+          .select('*, articles(nom, categorie)').eq('journee_stock_id', js.id)
         setLignes(lg ?? [])
       } else {
         setLignes([])
@@ -38,11 +36,11 @@ export default function StockMagasin() {
     loadStock()
   }, [selectedMagasin])
 
-  const grouped = {}
+  const groupedLignes = {}
   lignes.forEach(l => {
     const cat = l.articles?.categorie ?? 'Autre'
-    if (!grouped[cat]) grouped[cat] = []
-    grouped[cat].push(l)
+    if (!groupedLignes[cat]) groupedLignes[cat] = []
+    groupedLignes[cat].push(l)
   })
 
   if (loading) return <MagasinLayout><div className="flex items-center justify-center py-32"><Loader2 className="animate-spin text-green-500" size={28} /></div></MagasinLayout>
@@ -74,19 +72,21 @@ export default function StockMagasin() {
               ))}
             </tr></thead>
             <tbody className="divide-y divide-gray-50">
-              {Object.entries(grouped).map(([cat, arts]) => (
-                <>{[<tr key={cat}><td colSpan={5} className="px-4 py-2 bg-gray-50 text-[10px] font-bold text-gray-400 uppercase">{cat}</td></tr>,
+              {Object.entries(groupedLignes).map(([cat, arts]) => [
+                <tr key={`cat-${cat}`}><td colSpan={5} className="px-4 py-2 bg-gray-50 text-[10px] font-bold text-gray-400 uppercase">{cat}</td></tr>,
                 ...arts.map(l => {
                   const actuel = l.stock_ouverture + l.total_entrees - l.total_sorties
                   return (
-                    <tr key={l.id}><td className="px-4 py-2.5 font-medium text-gray-700">{l.articles?.nom}</td>
-                    <td className="px-4 py-2.5 text-gray-500">{l.stock_ouverture}</td>
-                    <td className="px-4 py-2.5 text-green-600">{l.total_entrees > 0 ? `+${l.total_entrees}` : '—'}</td>
-                    <td className="px-4 py-2.5 text-red-600">{l.total_sorties > 0 ? `-${l.total_sorties}` : '—'}</td>
-                    <td className="px-4 py-2.5 font-bold text-gray-800">{actuel}</td></tr>
+                    <tr key={l.id}>
+                      <td className="px-4 py-2.5 font-medium text-gray-700">{l.articles?.nom}</td>
+                      <td className="px-4 py-2.5 text-gray-500">{l.stock_ouverture}</td>
+                      <td className="px-4 py-2.5 text-green-600">{l.total_entrees > 0 ? `+${l.total_entrees}` : '—'}</td>
+                      <td className="px-4 py-2.5 text-red-600">{l.total_sorties > 0 ? `-${l.total_sorties}` : '—'}</td>
+                      <td className="px-4 py-2.5 font-bold text-gray-800">{actuel}</td>
+                    </tr>
                   )
-                })]}</>
-              ))}
+                })
+              ])}
             </tbody>
           </table>
         </div>

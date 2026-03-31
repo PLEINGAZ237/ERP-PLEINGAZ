@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import MagasinLayout from '@/components/commercial/MagasinLayout'
-import { Loader2, Plus, ArrowDownToLine, ArrowUpFromLine, Lock, Unlock, Package } from 'lucide-react'
+import { Loader2, Plus, ArrowDownToLine, ArrowUpFromLine, Lock, Package } from 'lucide-react'
 
 export default function GestionStock() {
   const { user } = useAuth()
@@ -16,7 +16,6 @@ export default function GestionStock() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-
   const [showMvt, setShowMvt] = useState(false)
   const [mvtForm, setMvtForm] = useState({ article_id: '', type: 'entree', motif: 'approvisionnement', quantite: '', description: '' })
   const [showCloture, setShowCloture] = useState(false)
@@ -26,12 +25,14 @@ export default function GestionStock() {
     { value: 'approvisionnement', label: 'Approvisionnement' },
     { value: 'retour_vehicule', label: 'Retour véhicule' },
     { value: 'retour_client', label: 'Retour client' },
+    { value: 'transfert_recu', label: 'Transfert reçu' },
     { value: 'ajustement_plus', label: 'Ajustement (+)' },
   ]
   const MOTIFS_SORTIE = [
     { value: 'vente', label: 'Vente' },
     { value: 'livraison', label: 'Livraison client' },
     { value: 'chargement_vehicule', label: 'Chargement véhicule' },
+    { value: 'transfert_envoye', label: 'Transfert envoyé' },
     { value: 'casse', label: 'Casse / perte' },
     { value: 'ajustement_moins', label: 'Ajustement (-)' },
   ]
@@ -41,7 +42,7 @@ export default function GestionStock() {
       setLoading(true)
       const [{ data: mg }, { data: art }] = await Promise.all([
         supabase.from('magasins').select('id, nom').eq('statut', 'actif').order('nom'),
-        supabase.from('articles').select('id, nom, categorie').eq('statut', 'actif').order('categorie, nom'),
+        supabase.from('articles').select('id, nom, categorie').eq('statut', 'actif').order('nom'),
       ])
       setMagasins(mg ?? [])
       setArticles(art ?? [])
@@ -51,45 +52,34 @@ export default function GestionStock() {
     load()
   }, [])
 
-  useEffect(() => {
-    if (selectedMagasin) loadJournee()
-  }, [selectedMagasin])
+  useEffect(() => { if (selectedMagasin) loadJournee() }, [selectedMagasin])
 
   const loadJournee = async () => {
-    const { data: js } = await supabase
-      .from('journees_stock')
-      .select('*')
-      .eq('magasin_id', selectedMagasin)
-      .eq('date_journee', new Date().toISOString().slice(0, 10))
-      .maybeSingle()
+    // Chercher une journée ouverte OU clôturée pour aujourd'hui
+    const { data: js } = await supabase.from('journees_stock')
+      .select('*').eq('magasin_id', selectedMagasin)
+      .in('statut', ['OUVERTE', 'CLOTUREE', 'VALIDEE'])
+      .order('date_journee', { ascending: false }).limit(1).maybeSingle()
+
     setJournee(js)
-
     if (js) {
-      const { data: lg } = await supabase
-        .from('lignes_journee_stock')
-        .select('*, articles(nom, categorie)')
-        .eq('journee_stock_id', js.id)
-        .order('articles(categorie), articles(nom)')
+      const { data: lg } = await supabase.from('lignes_journee_stock')
+        .select('*, articles(nom, categorie)').eq('journee_stock_id', js.id)
       setLignes(lg ?? [])
-
-      const { data: mvts } = await supabase
-        .from('mouvements_stock')
+      const { data: mvts } = await supabase.from('mouvements_stock')
         .select('*, articles(nom), profiles!effectue_par(nom, prenom)')
-        .eq('journee_stock_id', js.id)
-        .order('created_at', { ascending: false })
+        .eq('journee_stock_id', js.id).order('created_at', { ascending: false })
       setMouvements(mvts ?? [])
-
       const sp = {}
-      ;(lg ?? []).forEach(l => { sp[l.article_id] = l.stock_physique ?? (l.stock_ouverture + l.total_entrees - l.total_sorties) })
+      ;(lg ?? []).forEach(l => { sp[l.article_id] = l.stock_physique ?? '' })
       setStocksPhysiques(sp)
     } else {
-      setLignes([])
-      setMouvements([])
+      setLignes([]); setMouvements([])
     }
   }
 
   const handleOuvrir = async () => {
-    setError(''); setSaving(true)
+    setError(''); setSuccess(''); setSaving(true)
     const { data, error: err } = await supabase.rpc('ouvrir_journee_stock', { p_magasin_id: selectedMagasin })
     setSaving(false)
     if (err) { setError(err.message); return }
@@ -102,18 +92,14 @@ export default function GestionStock() {
     if (!mvtForm.article_id) { setError('Sélectionnez un article.'); return }
     if (!mvtForm.quantite || Number(mvtForm.quantite) <= 0) { setError('Quantité invalide.'); return }
     setSaving(true)
-
-    const { data, error: err } = await supabase.rpc('enregistrer_mouvement_stock', {
-      p_journee_stock_id: journee.id,
-      p_article_id: mvtForm.article_id,
-      p_type: mvtForm.type,
-      p_motif: mvtForm.motif,
-      p_quantite: Number(mvtForm.quantite),
-      p_description: mvtForm.description || null,
+    const { error: err } = await supabase.rpc('enregistrer_mouvement_stock', {
+      p_journee_stock_id: journee.id, p_article_id: mvtForm.article_id,
+      p_type: mvtForm.type, p_motif: mvtForm.motif,
+      p_quantite: Number(mvtForm.quantite), p_description: mvtForm.description || null,
     })
     setSaving(false)
     if (err) { setError(err.message); return }
-    setSuccess(`${mvtForm.type === 'entree' ? 'Entrée' : 'Sortie'} de ${mvtForm.quantite} unités enregistrée.`)
+    setSuccess(`${mvtForm.type === 'entree' ? 'Entrée' : 'Sortie'} enregistrée.`)
     setShowMvt(false)
     setMvtForm({ article_id: '', type: 'entree', motif: 'approvisionnement', quantite: '', description: '' })
     loadJournee()
@@ -121,19 +107,22 @@ export default function GestionStock() {
 
   const handleCloturer = async () => {
     setError(''); setSaving(true)
-    const stocks = Object.entries(stocksPhysiques).map(([article_id, stock_physique]) => ({ article_id, stock_physique: Number(stock_physique) }))
-    const { data, error: err } = await supabase.rpc('cloturer_journee_stock', {
-      p_journee_stock_id: journee.id,
-      p_stocks_physiques: stocks,
-    })
+    // Mettre à jour le stock physique de chaque article
+    for (const l of lignes) {
+      const phys = stocksPhysiques[l.article_id]
+      if (phys !== '' && phys !== null && phys !== undefined) {
+        await supabase.from('lignes_journee_stock')
+          .update({ stock_physique: Number(phys) }).eq('id', l.id)
+      }
+    }
+    // Clôturer la journée
+    await supabase.from('journees_stock')
+      .update({ statut: 'CLOTUREE', cloturee_par: user.id }).eq('id', journee.id)
     setSaving(false)
-    if (err) { setError(err.message); return }
-    setSuccess(`Stock clôturé. Écarts totaux : ${data.total_ecarts} unités.`)
+    setSuccess('Stock clôturé — en attente de validation par le chef d\'agence.')
     setShowCloture(false)
     loadJournee()
   }
-
-  const CAT_LABELS = { GPL: 'GPL', CONSIGNE: 'Consigne', ACCESSOIRE: 'Accessoire' }
 
   const groupedLignes = {}
   lignes.forEach(l => {
@@ -152,7 +141,7 @@ export default function GestionStock() {
           <p className="text-sm text-gray-400">{new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
         </div>
         <select value={selectedMagasin} onChange={e => setSelectedMagasin(e.target.value)}
-          className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-green-500/20">
+          className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none">
           {magasins.map(m => <option key={m.id} value={m.id}>{m.nom}</option>)}
         </select>
       </div>
@@ -160,93 +149,92 @@ export default function GestionStock() {
       {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-xl mb-4">{error}</div>}
       {success && <div className="p-3 bg-green-50 text-green-700 text-sm rounded-xl mb-4">{success}</div>}
 
-      {!journee ? (
+      {/* Pas de journée → bouton ouvrir */}
+      {!journee && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
-          <Package size={32} className="mx-auto text-green-500 mb-4" />
-          <h2 className="font-bold text-gray-800 text-lg mb-2">Stock non ouvert</h2>
-          <p className="text-sm text-gray-400 mb-6">Ouvrez le stock pour commencer les opérations du jour.</p>
+          <Package size={40} className="mx-auto text-gray-300 mb-4" />
+          <p className="text-gray-500 mb-4">Aucune journée de stock ouverte pour ce magasin.</p>
           <button onClick={handleOuvrir} disabled={saving}
-            className="px-6 py-3 bg-green-600 text-white rounded-xl text-sm font-bold hover:bg-green-700 disabled:opacity-50">
+            className="px-6 py-3 bg-green-600 text-white rounded-xl font-bold text-sm hover:bg-green-700 disabled:opacity-50">
             {saving ? 'Ouverture...' : 'Ouvrir le stock'}
           </button>
         </div>
-      ) : (
+      )}
+
+      {/* Journée existe */}
+      {journee && (
         <>
-          {/* Actions */}
-          {journee.statut === 'OUVERTE' && (
-            <div className="flex flex-wrap gap-3 mb-6">
-              <button onClick={() => { setMvtForm({ ...mvtForm, type: 'entree', motif: 'approvisionnement' }); setShowMvt(true) }}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl text-sm font-bold hover:bg-green-700">
-                <ArrowDownToLine size={16} /> Entrée de stock
-              </button>
-              <button onClick={() => { setMvtForm({ ...mvtForm, type: 'sortie', motif: 'vente' }); setShowMvt(true) }}
-                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-xl text-sm font-bold hover:bg-red-700">
-                <ArrowUpFromLine size={16} /> Sortie de stock
-              </button>
-              <button onClick={() => setShowCloture(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-xl text-sm font-bold hover:bg-gray-900 ml-auto">
-                <Lock size={16} /> Clôturer
-              </button>
+          {/* Barre d'état */}
+          <div className={`rounded-xl p-4 mb-6 flex items-center justify-between ${
+            journee.statut === 'OUVERTE' ? 'bg-green-50 border border-green-200' :
+            journee.statut === 'VALIDEE' ? 'bg-blue-50 border border-blue-200' :
+            'bg-gray-100 border border-gray-200'
+          }`}>
+            <div className="flex items-center gap-3">
+              {journee.statut === 'OUVERTE' ? <Package size={18} className="text-green-600" /> : <Lock size={18} className="text-gray-500" />}
+              <div>
+                <p className="font-bold text-gray-700 text-sm">
+                  {journee.statut === 'OUVERTE' ? 'Stock ouvert' : journee.statut === 'VALIDEE' ? 'Stock validé' : 'Stock clôturé — en attente de validation'}
+                </p>
+                <p className="text-xs text-gray-400">{new Date(journee.date_journee).toLocaleDateString('fr-FR')}</p>
+              </div>
             </div>
-          )}
+            {journee.statut === 'OUVERTE' && (
+              <div className="flex gap-2">
+                <button onClick={() => { setMvtForm({ ...mvtForm, type: 'entree', motif: 'approvisionnement' }); setShowMvt(true) }}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700">
+                  <ArrowDownToLine size={14} /> Entrée
+                </button>
+                <button onClick={() => { setMvtForm({ ...mvtForm, type: 'sortie', motif: 'vente' }); setShowMvt(true) }}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700">
+                  <ArrowUpFromLine size={14} /> Sortie
+                </button>
+                <button onClick={() => setShowCloture(true)}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-gray-800 text-white rounded-lg text-xs font-bold hover:bg-gray-900">
+                  <Lock size={14} /> Clôturer
+                </button>
+              </div>
+            )}
+          </div>
 
-          {journee.statut === 'CLOTUREE' && (
-            <div className="bg-gray-100 rounded-xl p-4 mb-6 flex items-center gap-3">
-              <Lock size={18} className="text-gray-500" />
-              <p className="font-bold text-gray-700 text-sm">Stock clôturé pour aujourd'hui</p>
-            </div>
-          )}
-
-          {/* Tableau de stock */}
+          {/* Tableau stock */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
-            <div className="px-5 py-3 border-b">
-              <h2 className="font-semibold text-gray-700 text-sm">État du stock</h2>
-            </div>
+            <div className="px-5 py-3 border-b"><h2 className="font-semibold text-gray-700 text-sm">État du stock</h2></div>
             {lignes.length === 0 ? (
               <p className="text-gray-400 text-sm text-center py-12">Aucun article.</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-50 border-b">
-                    <tr>
-                      {['Article', 'Ouverture', 'Entrées', 'Sorties', 'Théorique', 'Écart'].map(h => (
-                        <th key={h} className="text-left px-4 py-2.5 font-semibold text-gray-500 text-xs uppercase">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {Object.entries(groupedLignes).map(([cat, arts]) => (
-                      <>
-                        <tr key={cat}><td colSpan={6} className="px-4 py-2 bg-gray-50 text-[10px] font-bold text-gray-400 uppercase">{CAT_LABELS[cat] ?? cat}</td></tr>
-                        {arts.map(l => {
-                          const theorique = l.stock_ouverture + l.total_entrees - l.total_sorties
-                          const ecart = (l.stock_physique ?? theorique) - theorique
-                          return (
-                            <tr key={l.id} className="hover:bg-gray-50/50">
-                              <td className="px-4 py-2.5 font-medium text-gray-700">{l.articles?.nom}</td>
-                              <td className="px-4 py-2.5 text-gray-500">{l.stock_ouverture}</td>
-                              <td className="px-4 py-2.5 text-green-600 font-medium">{l.total_entrees > 0 ? `+${l.total_entrees}` : '—'}</td>
-                              <td className="px-4 py-2.5 text-red-600 font-medium">{l.total_sorties > 0 ? `-${l.total_sorties}` : '—'}</td>
-                              <td className="px-4 py-2.5 font-bold text-gray-800">{theorique}</td>
-                              <td className={`px-4 py-2.5 font-bold ${ecart !== 0 ? (ecart > 0 ? 'text-green-600' : 'text-red-600') : 'text-gray-400'}`}>
-                                {ecart !== 0 ? (ecart > 0 ? `+${ecart}` : ecart) : '—'}
-                              </td>
-                            </tr>
-                          )
-                        })}
-                      </>
+                  <thead className="bg-gray-50 border-b"><tr>
+                    {['Article', 'Ouverture', 'Entrées', 'Sorties', 'Théorique'].map(h => (
+                      <th key={h} className="text-left px-4 py-2.5 font-semibold text-gray-500 text-xs uppercase">{h}</th>
                     ))}
+                  </tr></thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {Object.entries(groupedLignes).map(([cat, arts]) => [
+                      <tr key={`cat-${cat}`}><td colSpan={5} className="px-4 py-2 bg-gray-50 text-[10px] font-bold text-gray-400 uppercase">{cat}</td></tr>,
+                      ...arts.map(l => {
+                        const theo = l.stock_ouverture + l.total_entrees - l.total_sorties
+                        return (
+                          <tr key={l.id} className="hover:bg-gray-50/50">
+                            <td className="px-4 py-2.5 font-medium text-gray-700">{l.articles?.nom}</td>
+                            <td className="px-4 py-2.5 text-gray-500">{l.stock_ouverture}</td>
+                            <td className="px-4 py-2.5 text-green-600 font-medium">{l.total_entrees > 0 ? `+${l.total_entrees}` : '—'}</td>
+                            <td className="px-4 py-2.5 text-red-600 font-medium">{l.total_sorties > 0 ? `-${l.total_sorties}` : '—'}</td>
+                            <td className="px-4 py-2.5 font-bold text-gray-800">{theo}</td>
+                          </tr>
+                        )
+                      })
+                    ])}
                   </tbody>
                 </table>
               </div>
             )}
           </div>
 
-          {/* Mouvements du jour */}
+          {/* Mouvements */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="px-5 py-3 border-b">
-              <h2 className="font-semibold text-gray-700 text-sm">Mouvements du jour</h2>
-            </div>
+            <div className="px-5 py-3 border-b"><h2 className="font-semibold text-gray-700 text-sm">Mouvements du jour ({mouvements.length})</h2></div>
             {mouvements.length === 0 ? (
               <p className="text-gray-400 text-sm text-center py-8">Aucun mouvement.</p>
             ) : (
@@ -255,11 +243,9 @@ export default function GestionStock() {
                   <div key={m.id} className="px-5 py-3 flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-700">{m.articles?.nom}</p>
-                      <p className="text-xs text-gray-400">{m.motif.replace(/_/g, ' ')} · {m.description ?? ''} · {m.profiles?.prenom} {m.profiles?.nom} · {new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+                      <p className="text-xs text-gray-400">{(m.motif ?? '').replace(/_/g, ' ')} {m.description ? `· ${m.description}` : ''} · {m.profiles?.prenom} {m.profiles?.nom} · {new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
                     </div>
-                    <p className={`font-bold ${m.type === 'entree' ? 'text-green-600' : 'text-red-600'}`}>
-                      {m.type === 'entree' ? '+' : '-'}{m.quantite}
-                    </p>
+                    <p className={`font-bold ${m.type === 'entree' ? 'text-green-600' : 'text-red-600'}`}>{m.type === 'entree' ? '+' : '-'}{m.quantite}</p>
                   </div>
                 ))}
               </div>
@@ -274,33 +260,25 @@ export default function GestionStock() {
           <div className="bg-white rounded-t-3xl sm:rounded-2xl p-6 max-w-md w-full shadow-2xl">
             <h3 className="text-lg font-bold text-gray-800 mb-4">{mvtForm.type === 'entree' ? 'Entrée de stock' : 'Sortie de stock'}</h3>
             <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Article *</label>
+              <div><label className="block text-xs font-bold text-gray-400 uppercase mb-1">Article *</label>
                 <select value={mvtForm.article_id} onChange={e => setMvtForm({ ...mvtForm, article_id: e.target.value })}
                   className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none">
                   <option value="">Sélectionner...</option>
                   {articles.map(a => <option key={a.id} value={a.id}>{a.nom} ({a.categorie})</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Motif *</label>
+                </select></div>
+              <div><label className="block text-xs font-bold text-gray-400 uppercase mb-1">Motif *</label>
                 <select value={mvtForm.motif} onChange={e => setMvtForm({ ...mvtForm, motif: e.target.value })}
                   className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none">
                   {(mvtForm.type === 'entree' ? MOTIFS_ENTREE : MOTIFS_SORTIE).map(m => (
                     <option key={m.value} value={m.value}>{m.label}</option>
                   ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Quantité *</label>
+                </select></div>
+              <div><label className="block text-xs font-bold text-gray-400 uppercase mb-1">Quantité *</label>
                 <input type="number" min="1" value={mvtForm.quantite} onChange={e => setMvtForm({ ...mvtForm, quantite: e.target.value })}
-                  placeholder="0" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Description</label>
+                  placeholder="0" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none" /></div>
+              <div><label className="block text-xs font-bold text-gray-400 uppercase mb-1">Description</label>
                 <input type="text" value={mvtForm.description} onChange={e => setMvtForm({ ...mvtForm, description: e.target.value })}
-                  placeholder="Détails..." className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none" />
-              </div>
+                  placeholder="Détails..." className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none" /></div>
             </div>
             <div className="flex gap-3 mt-5">
               <button onClick={() => setShowMvt(false)} className="flex-1 py-2.5 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 font-medium">Annuler</button>
@@ -321,16 +299,16 @@ export default function GestionStock() {
             <p className="text-sm text-gray-500 mb-4">Saisissez le comptage physique pour chaque article :</p>
             <div className="space-y-2 mb-5">
               {lignes.map(l => {
-                const theorique = l.stock_ouverture + l.total_entrees - l.total_sorties
+                const theo = l.stock_ouverture + l.total_entrees - l.total_sorties
                 return (
                   <div key={l.id} className="flex items-center gap-3 bg-gray-50 rounded-lg p-3">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-700">{l.articles?.nom}</p>
-                      <p className="text-[10px] text-gray-400">Théorique : {theorique}</p>
+                      <p className="text-[10px] text-gray-400">Théorique : {theo}</p>
                     </div>
                     <input type="number" min="0" value={stocksPhysiques[l.article_id] ?? ''}
                       onChange={e => setStocksPhysiques({ ...stocksPhysiques, [l.article_id]: e.target.value })}
-                      placeholder={theorique.toString()}
+                      placeholder={theo.toString()}
                       className="w-24 border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-center outline-none" />
                   </div>
                 )
