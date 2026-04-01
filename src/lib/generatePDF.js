@@ -3,366 +3,347 @@ import autoTable from 'jspdf-autotable'
 
 const fmt = (n) => n != null ? Number(n).toLocaleString('fr-FR') : '0'
 
-/**
- * Facture INFOTECH S.A. — format identique au carnet papier
- * Taille : ~185mm x 135mm (petit format reçu)
- */
-export function genererFacturePDF(facture, commande, lignes, client, reglements = []) {
-  // Format petit reçu (185 x 135 mm)
-  const doc = new jsPDF({ unit: 'mm', format: [185, 135] })
-  const W = 185
-  const H = 135
-  const m = 6 // marge
-  let y = 6
+// Couleurs
+const RED = [220, 53, 34]
+const DARK = [40, 40, 40]
+const GRAY = [120, 120, 120]
+const LIGHT = [248, 248, 248]
+const WHITE = [255, 255, 255]
 
-  // ═══════════════════════════════════════════
-  // EN-TÊTE
-  // ═══════════════════════════════════════════
+function entete(doc, titre, numero, date, refExtra) {
+  const W = doc.internal.pageSize.getWidth()
+  const m = 15
+  let y = 15
 
-  // Logo cercle (simulé)
-  doc.setDrawColor(200, 0, 0)
-  doc.setLineWidth(0.5)
-  doc.circle(m + 7, y + 7, 6)
-  doc.setFontSize(3.5)
+  // Bande rouge en haut
+  doc.setFillColor(...RED)
+  doc.rect(0, 0, W, 4, 'F')
+
+  // INFOTECH S.A.
+  doc.setFontSize(22)
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor(200, 0, 0)
-  doc.text('INFOTECH S.A.', m + 7, y + 8.5, { align: 'center' })
+  doc.setTextColor(...RED)
+  doc.text('INFOTECH S.A.', m, y + 4)
 
-  // Nom entreprise
-  doc.setFontSize(14)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(220, 0, 0)
-  doc.text('INFOTECH S.A.', m + 16, y + 4)
-
-  // Infos légales
-  doc.setFontSize(4.5)
-  doc.setFont('helvetica', 'normal')
-  doc.setTextColor(40, 40, 40)
-  doc.text('S.A. au capital de 100 000 000 Fcfa • RC/YAO/2014/M/170', m + 16, y + 8)
-  doc.text('N° Contrib. M121300048218 • 8107 Yaoundé-Cameroun', m + 16, y + 11)
-  doc.text('YAOUNDÉ: Mending face EM Money • Tél.: 680 00 00 75 / 699 79 51 81', m + 16, y + 14)
-  doc.text('DOUALA: Carrefour Anatole • Tél.: 699 81 83 52 / 699 82 14 17', m + 16, y + 17)
-  doc.text('DSCHANG: Marché Tsinfem • Tél.: 699 70 72 62', m + 16, y + 20)
-  doc.text('MAROUA: Petit marché Domayo • Tél.: 699 81 82 92', m + 16, y + 23)
-
-  // Boîte BP à droite
-  const bpX = W - m - 30
-  doc.setDrawColor(0, 0, 0)
-  doc.setLineWidth(0.3)
-  doc.rect(bpX, y, 30, 8)
-  doc.setFontSize(7)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(0, 0, 0)
-  doc.text('BP', bpX + 2, y + 5)
-  // BP client
-  doc.setFont('helvetica', 'normal')
-  doc.text(client?.bp ?? '', bpX + 10, y + 5)
-
-  // FACTURE N°
-  doc.setFontSize(12)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(0, 0, 0)
-  doc.text('FACTURE', W - m - 30, y + 17)
-  
   doc.setFontSize(9)
-  doc.text('N°', W - m - 14, y + 17)
-  
-  doc.setTextColor(220, 0, 0)
-  doc.setFontSize(10)
-  doc.text(facture.numero ?? '', W - m, y + 17, { align: 'right' })
-
-  // Date en petit
-  doc.setFontSize(5)
-  doc.setTextColor(100, 100, 100)
-  doc.text(`Le ${new Date(facture.created_at ?? Date.now()).toLocaleDateString('fr-FR')}`, W - m, y + 21, { align: 'right' })
-
-  y += 27
-
-  // ═══════════════════════════════════════════
-  // REÇU DE M
-  // ═══════════════════════════════════════════
-
-  doc.setDrawColor(0, 0, 0)
-  doc.setLineWidth(0.2)
-  doc.line(m, y, W - m, y)
-  y += 4
-
-  doc.setFontSize(7)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(0, 0, 0)
-  doc.text('REÇU de M', m, y)
-  
-  doc.setFont('helvetica', 'italic')
-  doc.setFontSize(5)
-  doc.setTextColor(100, 100, 100)
-  doc.text('Received from', m + 22, y)
-
-  // Nom du client
   doc.setFont('helvetica', 'normal')
-  doc.setFontSize(8)
-  doc.setTextColor(0, 0, 0)
-  doc.text(client?.nom_interne ?? '________________________________', m + 42, y)
+  doc.setTextColor(...GRAY)
+  y += 10
+  doc.text('S.A. au capital de 100 000 000 Fcfa • RC/YAO/2014/M/170', m, y)
+  y += 4
+  doc.text('N° Contrib. M121300048218 • BP 8107 Yaoundé-Cameroun', m, y)
+  y += 4
+  doc.text('Tél: 680 00 00 75 / 699 79 51 81 • info@monpleingaz.com', m, y)
 
-  // Ligne pointillée
-  doc.setLineDashPattern([0.5, 0.5], 0)
-  doc.line(m + 42, y + 1, W - m, y + 1)
-  doc.setLineDashPattern([], 0)
+  // Titre document à droite
+  doc.setFontSize(24)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...RED)
+  doc.text(titre, W - m, 22, { align: 'right' })
 
-  y += 6
+  // Numéro
+  doc.setFontSize(11)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...DARK)
+  doc.text(numero ?? '', W - m, 30, { align: 'right' })
 
-  // ═══════════════════════════════════════════
-  // TABLEAU DES ARTICLES
-  // ═══════════════════════════════════════════
+  // Date
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(...GRAY)
+  doc.text('Date: ' + (date ? new Date(date).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR')), W - m, 36, { align: 'right' })
 
-  const tableData = (lignes ?? []).map(l => [
-    l.articles?.nom ?? l.article_nom ?? '',
-    (l.quantite ?? 0).toString(),
-    fmt(l.prix_unitaire),
-    fmt(l.quantite * l.prix_unitaire),
-  ])
-
-  // Remplir jusqu'à 6 lignes minimum pour le format papier
-  while (tableData.length < 6) {
-    tableData.push(['', '', '', ''])
+  // Ref extra
+  if (refExtra) {
+    doc.text(refExtra, W - m, 42, { align: 'right' })
   }
 
-  autoTable(doc, {
-    startY: y,
-    head: [['Désignations', 'Qté', 'Prix Unit.', 'Montant']],
-    body: tableData,
-    theme: 'grid',
-    styles: {
-      fontSize: 6.5,
-      cellPadding: { top: 1.5, bottom: 1.5, left: 2, right: 2 },
-      lineColor: [0, 0, 0],
-      lineWidth: 0.2,
-      textColor: [0, 0, 0],
-    },
-    headStyles: {
-      fillColor: [255, 255, 255],
-      textColor: [0, 0, 0],
-      fontStyle: 'bold',
-      fontSize: 7,
-      halign: 'center',
-    },
-    bodyStyles: {
-      fillColor: [255, 255, 255],
-    },
-    columnStyles: {
-      0: { halign: 'left', cellWidth: 'auto' },
-      1: { halign: 'center', cellWidth: 15 },
-      2: { halign: 'right', cellWidth: 22 },
-      3: { halign: 'right', cellWidth: 25 },
-    },
-    margin: { left: m, right: m },
-  })
-
-  y = doc.lastAutoTable.finalY
-
-  // ═══════════════════════════════════════════
-  // ARRÊTÉ + TOTAL
-  // ═══════════════════════════════════════════
-
-  const totalHT = (lignes ?? []).reduce((s, l) => s + (l.quantite * l.prix_unitaire), 0)
-
-  // Ligne "Arrêté la présente facture à la somme de :"
-  doc.setDrawColor(0, 0, 0)
-  doc.setLineWidth(0.2)
-  y += 0.5
-
-  doc.setFontSize(5.5)
-  doc.setFont('helvetica', 'italic')
-  doc.setTextColor(0, 0, 0)
-  doc.text('Arrêté la présente facture à la somme de :', m + 2, y + 3.5)
-
-  // TOTAL box à droite
-  const totalX = W - m - 25
-  doc.setLineWidth(0.3)
-  doc.rect(totalX - 15, y, 40, 6)
-  doc.setFontSize(7)
-  doc.setFont('helvetica', 'bold')
-  doc.text('TOTAL', totalX - 13, y + 4)
-  doc.setFontSize(8)
-  doc.text(fmt(totalHT) + ' F', W - m - 2, y + 4, { align: 'right' })
-
-  y += 8
-
-  // ═══════════════════════════════════════════
-  // RESTE / BALANCE
-  // ═══════════════════════════════════════════
-
-  const montantRegle = Number(facture.montant_regle ?? 0)
-  const reste = totalHT - montantRegle
-
-  doc.setFontSize(6)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(0, 0, 0)
-  doc.text('Reste', m + 40, y + 2)
-  doc.setFont('helvetica', 'italic')
-  doc.setFontSize(5)
-  doc.setTextColor(100, 100, 100)
-  doc.text('Balance', m + 50, y + 2)
-
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(7)
-  doc.setTextColor(220, 0, 0)
-  doc.text(reste > 0 ? fmt(reste) + ' F' : '—', m + 65, y + 2)
-
-  // Fait à ... le ...
-  doc.setFontSize(6)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(0, 0, 0)
-  doc.text('Fait à', W - m - 55, y + 2)
-  doc.setFont('helvetica', 'italic')
-  doc.setFontSize(5)
-  doc.setTextColor(100, 100, 100)
-  doc.text('Issued at', W - m - 48, y + 2)
-  
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(6)
-  doc.setTextColor(0, 0, 0)
-  doc.text('Yaoundé', W - m - 35, y + 2)
-
-  doc.setFontSize(6)
-  doc.setFont('helvetica', 'bold')
-  doc.text('le', W - m - 18, y + 2)
-  doc.setFont('helvetica', 'italic')
-  doc.setFontSize(5)
-  doc.setTextColor(100, 100, 100)
-  doc.text('The', W - m - 15, y + 2)
-  
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(6)
-  doc.setTextColor(0, 0, 0)
-  doc.text(new Date(facture.created_at ?? Date.now()).toLocaleDateString('fr-FR'), W - m - 8, y + 2)
-
-  y += 7
-
-  // ═══════════════════════════════════════════
-  // SIGNATURES
-  // ═══════════════════════════════════════════
-
-  doc.setDrawColor(0, 0, 0)
-  doc.setLineWidth(0.2)
+  // Ligne rouge
+  y += 6
+  doc.setDrawColor(...RED)
+  doc.setLineWidth(1)
   doc.line(m, y, W - m, y)
-  y += 3
 
-  // Signature Client
-  doc.setFontSize(6)
+  return y + 6
+}
+
+function blocClient(doc, y, client) {
+  const m = 15
+  const W = doc.internal.pageSize.getWidth()
+
+  doc.setFillColor(...LIGHT)
+  doc.roundedRect(m, y, W - 2 * m, 24, 3, 3, 'F')
+
+  doc.setFontSize(7)
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor(0, 0, 0)
-  doc.text('Signature Client', m + 15, y + 2)
-  doc.setFont('helvetica', 'italic')
-  doc.setFontSize(4.5)
-  doc.setTextColor(100, 100, 100)
-  doc.text('Customers visa', m + 15, y + 5)
+  doc.setTextColor(...RED)
+  doc.text('CLIENT', m + 5, y + 5)
 
-  // Signature Commercial
-  doc.setFontSize(6)
+  doc.setFontSize(13)
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor(0, 0, 0)
-  doc.text('Signature Commercial', W - m - 40, y + 2)
-  doc.setFont('helvetica', 'italic')
-  doc.setFontSize(4.5)
-  doc.setTextColor(100, 100, 100)
-  doc.text('Commercial visa', W - m - 40, y + 5)
+  doc.setTextColor(...DARK)
+  doc.text(client?.nom_interne ?? '—', m + 5, y + 13)
 
-  // Télécharger
-  doc.save(`Facture_${facture.numero ?? 'DRAFT'}.pdf`)
+  doc.setFontSize(8)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(...GRAY)
+  const infos = [client?.ville, client?.quartier, client?.telephone].filter(Boolean).join(' • ')
+  doc.text(infos || '', m + 5, y + 19)
+
+  if (client?.categorie) {
+    doc.setFontSize(8)
+    doc.setTextColor(...RED)
+    doc.text(client.categorie, W - m - 5, y + 13, { align: 'right' })
+  }
+
+  return y + 30
+}
+
+function piedDePage(doc) {
+  const W = doc.internal.pageSize.getWidth()
+  const H = doc.internal.pageSize.getHeight()
+  const footerY = H - 20
+
+  // Bande rouge en bas
+  doc.setFillColor(...RED)
+  doc.rect(0, H - 4, W, 4, 'F')
+
+  doc.setDrawColor(220, 220, 220)
+  doc.setLineWidth(0.3)
+  doc.line(15, footerY, W - 15, footerY)
+
+  doc.setFontSize(7)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(...GRAY)
+  doc.text('INFOTECH S.A. — RC/YAO/2014/M/170 — NIU: M121300048218 — BP 8107 Yaoundé', W / 2, footerY + 5, { align: 'center' })
+  doc.text('Distribution GPL — Marque PLeingaz — www.monpleingaz.com', W / 2, footerY + 9, { align: 'center' })
+  doc.text('Imprimé le ' + new Date().toLocaleDateString('fr-FR') + ' à ' + new Date().toLocaleTimeString('fr-FR'), W / 2, footerY + 13, { align: 'center' })
 }
 
 
 /**
- * Bon de livraison INFOTECH S.A. — même format
+ * FACTURE PDF — A4 rouge et blanc
  */
-export function genererBonLivraisonPDF(bl, facture, commande, lignes, client) {
-  const doc = new jsPDF({ unit: 'mm', format: [185, 135] })
-  const W = 185
-  const m = 6
-  let y = 6
+export function genererFacturePDF(facture, commande, lignes, client, reglements = []) {
+  const doc = new jsPDF()
+  const W = doc.internal.pageSize.getWidth()
+  const m = 15
 
-  // En-tête identique
-  doc.setDrawColor(200, 0, 0)
-  doc.setLineWidth(0.5)
-  doc.circle(m + 7, y + 7, 6)
-  doc.setFontSize(3.5)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(200, 0, 0)
-  doc.text('INFOTECH S.A.', m + 7, y + 8.5, { align: 'center' })
+  let y = entete(doc, 'FACTURE', facture.numero, facture.created_at, 'Commande: ' + (commande?.numero ?? '—'))
+  y = blocClient(doc, y, client)
 
-  doc.setFontSize(14)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(220, 0, 0)
-  doc.text('INFOTECH S.A.', m + 16, y + 4)
-
-  doc.setFontSize(4.5)
-  doc.setFont('helvetica', 'normal')
-  doc.setTextColor(40, 40, 40)
-  doc.text('S.A. au capital de 100 000 000 Fcfa • RC/YAO/2014/M/170', m + 16, y + 8)
-  doc.text('N° Contrib. M121300048218 • 8107 Yaoundé-Cameroun', m + 16, y + 11)
-  doc.text('YAOUNDÉ: Mending face EM Money • Tél.: 680 00 00 75 / 699 79 51 81', m + 16, y + 14)
-  doc.text('DOUALA: Carrefour Anatole • Tél.: 699 81 83 52 / 699 82 14 17', m + 16, y + 17)
-
-  // BON DE LIVRAISON N°
-  doc.setFontSize(10)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(0, 0, 0)
-  doc.text('BON DE LIVRAISON', W - m - 30, y + 10)
-  
-  doc.setFontSize(8)
-  doc.text('N°', W - m - 14, y + 15)
-  doc.setTextColor(220, 0, 0)
-  doc.text(bl.numero ?? '', W - m, y + 15, { align: 'right' })
-
-  doc.setFontSize(5)
-  doc.setTextColor(100, 100, 100)
-  doc.text(`Facture: ${facture?.numero ?? '—'}`, W - m, y + 19, { align: 'right' })
-  doc.text(`Le ${new Date(bl.created_at ?? Date.now()).toLocaleDateString('fr-FR')}`, W - m, y + 22, { align: 'right' })
-
-  y += 27
-  doc.setDrawColor(0, 0, 0)
-  doc.setLineWidth(0.2)
-  doc.line(m, y, W - m, y)
-  y += 4
-
-  // LIVRER À
-  doc.setFontSize(7)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(0, 0, 0)
-  doc.text('LIVRER À:', m, y)
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(8)
-  doc.text(client?.nom_interne ?? '—', m + 22, y)
-  y += 6
-
-  // Tableau
+  // Tableau articles
   const tableData = (lignes ?? []).map(l => [
-    l.articles?.nom ?? l.article_nom ?? '',
+    l.articles?.nom ?? l.article_nom ?? '—',
     (l.quantite ?? 0).toString(),
+    fmt(l.prix_unitaire) + ' F',
+    fmt((l.quantite ?? 0) * (l.prix_unitaire ?? 0)) + ' F',
   ])
-  while (tableData.length < 6) tableData.push(['', ''])
 
   autoTable(doc, {
     startY: y,
-    head: [['Désignations', 'Quantité']],
+    head: [['Désignation', 'Qté', 'Prix unitaire', 'Montant']],
     body: tableData,
     theme: 'grid',
-    styles: { fontSize: 7, cellPadding: { top: 1.5, bottom: 1.5, left: 2, right: 2 }, lineColor: [0, 0, 0], lineWidth: 0.2, textColor: [0, 0, 0] },
-    headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center' },
-    columnStyles: { 0: { halign: 'left', cellWidth: 'auto' }, 1: { halign: 'center', cellWidth: 25 } },
+    headStyles: { fillColor: RED, textColor: WHITE, fontStyle: 'bold', fontSize: 9, halign: 'center' },
+    bodyStyles: { fontSize: 9, textColor: DARK },
+    alternateRowStyles: { fillColor: [252, 245, 245] },
+    columnStyles: {
+      0: { halign: 'left', cellWidth: 'auto' },
+      1: { halign: 'center', cellWidth: 20 },
+      2: { halign: 'right', cellWidth: 35 },
+      3: { halign: 'right', cellWidth: 35 },
+    },
     margin: { left: m, right: m },
   })
 
-  y = doc.lastAutoTable.finalY + 5
-  doc.setDrawColor(0, 0, 0)
-  doc.setLineWidth(0.2)
-  doc.line(m, y, W - m, y)
-  y += 3
+  y = doc.lastAutoTable.finalY + 8
 
-  doc.setFontSize(6)
+  // Totaux
+  const totalHT = (lignes ?? []).reduce((s, l) => s + ((l.quantite ?? 0) * (l.prix_unitaire ?? 0)), 0)
+  const montantRegle = Number(facture.montant_regle ?? 0)
+  const reste = totalHT - montantRegle
+
+  const bx = W - m - 75
+  doc.setFillColor(...LIGHT)
+  doc.roundedRect(bx, y, 75, reste > 0 ? 30 : 22, 2, 2, 'F')
+
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(...GRAY)
+  doc.text('TOTAL TTC', bx + 4, y + 7)
   doc.setFont('helvetica', 'bold')
-  doc.text('Signature Magasinier', m + 10, y + 2)
-  doc.text('Signature Client', W - m - 35, y + 2)
+  doc.setFontSize(14)
+  doc.setTextColor(...DARK)
+  doc.text(fmt(totalHT) + ' F', bx + 71, y + 7, { align: 'right' })
 
-  doc.save(`BL_${bl.numero ?? 'DRAFT'}.pdf`)
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(34, 139, 34)
+  doc.text('Réglé', bx + 4, y + 15)
+  doc.text(fmt(montantRegle) + ' F', bx + 71, y + 15, { align: 'right' })
+
+  if (reste > 0) {
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(...RED)
+    doc.text('RESTE', bx + 4, y + 23)
+    doc.setFontSize(12)
+    doc.text(fmt(reste) + ' F', bx + 71, y + 23, { align: 'right' })
+  }
+
+  y += reste > 0 ? 38 : 30
+
+  // Règlements
+  if (reglements && reglements.length > 0) {
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(...RED)
+    doc.text('DÉTAIL DES RÈGLEMENTS', m, y)
+    y += 4
+
+    autoTable(doc, {
+      startY: y,
+      head: [['Mode', 'Montant', 'Banque', 'Référence']],
+      body: reglements.map(r => [
+        (r.mode ?? '').toUpperCase(),
+        fmt(r.montant) + ' F',
+        r.banques?.nom ?? r.banque ?? '—',
+        r.reference_cheque ?? '—',
+      ]),
+      theme: 'grid',
+      headStyles: { fillColor: [80, 80, 80], fontSize: 8, textColor: WHITE },
+      bodyStyles: { fontSize: 8 },
+      margin: { left: m, right: m },
+    })
+
+    y = doc.lastAutoTable.finalY + 10
+  }
+
+  // Signatures
+  doc.setFontSize(8)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...DARK)
+  doc.text('Signature Client', m + 20, y + 4)
+  doc.text('Signature Commercial', W - m - 40, y + 4)
+
+  doc.setDrawColor(200, 200, 200)
+  doc.line(m, y + 6, m + 60, y + 6)
+  doc.line(W - m - 60, y + 6, W - m, y + 6)
+
+  piedDePage(doc)
+  doc.save('Facture_' + (facture.numero ?? 'DRAFT') + '.pdf')
+}
+
+
+/**
+ * BON DE LIVRAISON PDF — A4 rouge et blanc
+ */
+export function genererBonLivraisonPDF(bl, facture, commande, lignes, client) {
+  const doc = new jsPDF()
+  const W = doc.internal.pageSize.getWidth()
+  const m = 15
+
+  let y = entete(doc, 'BON DE LIVRAISON', bl.numero, bl.created_at, 'Facture: ' + (facture?.numero ?? '—'))
+  y = blocClient(doc, y, client)
+
+  // Tableau
+  autoTable(doc, {
+    startY: y,
+    head: [['Désignation', 'Quantité']],
+    body: (lignes ?? []).map(l => [
+      l.articles?.nom ?? l.article_nom ?? '—',
+      (l.quantite ?? 0).toString(),
+    ]),
+    theme: 'grid',
+    headStyles: { fillColor: RED, textColor: WHITE, fontStyle: 'bold', fontSize: 10, halign: 'center' },
+    bodyStyles: { fontSize: 10, textColor: DARK },
+    alternateRowStyles: { fillColor: [252, 245, 245] },
+    columnStyles: { 0: { cellWidth: 'auto' }, 1: { halign: 'center', cellWidth: 30 } },
+    margin: { left: m, right: m },
+  })
+
+  y = doc.lastAutoTable.finalY + 15
+
+  // Signatures
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...DARK)
+  doc.text('Signature Magasinier', m + 15, y)
+  doc.text('Signature Client', W - m - 40, y)
+
+  doc.setDrawColor(200, 200, 200)
+  doc.line(m, y + 3, m + 60, y + 3)
+  doc.line(W - m - 60, y + 3, W - m, y + 3)
+
+  piedDePage(doc)
+  doc.save('BL_' + (bl.numero ?? 'DRAFT') + '.pdf')
+}
+
+
+/**
+ * BON DE SORTIE PDF — A4 rouge et blanc
+ */
+export function genererBonSortiePDF(bl, facture, lignes, client, magasin) {
+  const doc = new jsPDF()
+  const W = doc.internal.pageSize.getWidth()
+  const m = 15
+
+  const bsNumero = 'BS-' + (bl.numero ?? '').replace('BL-', '')
+  let y = entete(doc, 'BON DE SORTIE', bsNumero, null, 'BL: ' + (bl.numero ?? '—') + '  •  Facture: ' + (facture?.numero ?? '—'))
+
+  // Bloc infos
+  doc.setFillColor(...LIGHT)
+  doc.roundedRect(m, y, (W - 2 * m) / 2 - 5, 18, 3, 3, 'F')
+  doc.roundedRect(m + (W - 2 * m) / 2 + 5, y, (W - 2 * m) / 2 - 5, 18, 3, 3, 'F')
+
+  doc.setFontSize(7)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...RED)
+  doc.text('MAGASIN SOURCE', m + 5, y + 5)
+  doc.setFontSize(11)
+  doc.setTextColor(...DARK)
+  doc.text(magasin ?? '—', m + 5, y + 13)
+
+  const cx = m + (W - 2 * m) / 2 + 10
+  doc.setFontSize(7)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...RED)
+  doc.text('CLIENT DESTINATAIRE', cx, y + 5)
+  doc.setFontSize(11)
+  doc.setTextColor(...DARK)
+  doc.text(client?.nom_interne ?? '—', cx, y + 13)
+
+  y += 24
+
+  // Tableau
+  autoTable(doc, {
+    startY: y,
+    head: [['Désignation', 'Quantité sortie']],
+    body: (lignes ?? []).map(l => [
+      l.articles?.nom ?? l.article_nom ?? '—',
+      (l.quantite ?? 0).toString(),
+    ]),
+    theme: 'grid',
+    headStyles: { fillColor: RED, textColor: WHITE, fontStyle: 'bold', fontSize: 10, halign: 'center' },
+    bodyStyles: { fontSize: 10, textColor: DARK },
+    alternateRowStyles: { fillColor: [252, 245, 245] },
+    columnStyles: { 0: { cellWidth: 'auto' }, 1: { halign: 'center', cellWidth: 35 } },
+    margin: { left: m, right: m },
+  })
+
+  y = doc.lastAutoTable.finalY + 15
+
+  // Signatures
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...DARK)
+  doc.text('Signature Magasinier', m + 15, y)
+  doc.text('Signature Récepteur', W - m - 40, y)
+
+  doc.setDrawColor(200, 200, 200)
+  doc.line(m, y + 3, m + 60, y + 3)
+  doc.line(W - m - 60, y + 3, W - m, y + 3)
+
+  piedDePage(doc)
+  doc.save('BS_' + (bl.numero ?? 'DRAFT') + '.pdf')
 }

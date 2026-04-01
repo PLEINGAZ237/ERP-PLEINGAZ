@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
-import { genererBonLivraisonPDF } from '@/lib/generatePDF'
+import { genererBonLivraisonPDF, genererBonSortiePDF } from '@/lib/generatePDF'
 import MagasinLayout from '@/components/commercial/MagasinLayout'
 import { Loader2, CheckCircle, Package, Truck, Download } from 'lucide-react'
 
@@ -32,11 +32,17 @@ export default function Livraisons() {
     const { data, error: err } = await supabase.rpc('confirmer_livraison', { p_bl_id: bl.id })
     setSaving(null)
     if (err) {
-      // Afficher l'erreur (stock insuffisant, etc.)
       setError(err.message)
       return
     }
-    setSuccess('Livraison confirmée — sortie de stock enregistrée.')
+    setSuccess('Livraison confirmée — bon de sortie généré.')
+
+    // Générer le bon de sortie PDF automatiquement
+    const lignesCmd = bl.factures?.commandes?.lignes_commande ?? []
+    genererBonSortiePDF(bl, bl.factures, lignesCmd,
+      { nom_interne: bl.factures?.commandes?.clients?.nom_interne },
+      bl.magasins?.nom)
+
     load()
   }
 
@@ -108,12 +114,18 @@ export default function Livraisons() {
                   )}
 
                   {bl.statut === 'LIVRE' && bl.date_livraison && (
-                    <div className="flex items-center justify-between mt-2">
-                      <p className="text-xs text-gray-400">Livré le {new Date(bl.date_livraison).toLocaleDateString('fr-FR')} à {new Date(bl.date_livraison).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
-                      <button onClick={() => genererBonLivraisonPDF(bl, bl.factures, bl.factures?.commandes, lignesCmd, { nom_interne: bl.factures?.commandes?.clients?.nom_interne })}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700">
-                        <Download size={12} /> BL PDF
-                      </button>
+                    <div className="mt-2">
+                      <p className="text-xs text-gray-400 mb-2">Livré le {new Date(bl.date_livraison).toLocaleDateString('fr-FR')} à {new Date(bl.date_livraison).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+                      <div className="flex gap-2">
+                        <button onClick={() => genererBonSortiePDF(bl, bl.factures, lignesCmd, { nom_interne: bl.factures?.commandes?.clients?.nom_interne }, bl.magasins?.nom)}
+                          className="flex items-center gap-1 px-3 py-1.5 bg-gray-800 text-white rounded-lg text-xs font-bold hover:bg-gray-900">
+                          <Download size={12} /> Bon de sortie
+                        </button>
+                        <button onClick={() => genererBonLivraisonPDF(bl, bl.factures, bl.factures?.commandes, lignesCmd, { nom_interne: bl.factures?.commandes?.clients?.nom_interne })}
+                          className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700">
+                          <Download size={12} /> BL PDF
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
