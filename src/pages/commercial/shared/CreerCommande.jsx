@@ -66,6 +66,27 @@ export default function CreerCommande({ Layout = CommLayout, backPath = '/commer
     setError('')
     if (!selectedClient) { setError('Veuillez sélectionner un client.'); return }
     if (lignesActives.length === 0) { setError('Ajoutez au moins un article avec une quantité.'); return }
+
+    // Validation consigne : une consigne ne peut être vendue que si le GPL du même type est acheté pour la même quantité ou plus
+    const consigneTypes = ['50KG', '12.5KG', '6KG']
+    for (const type of consigneTypes) {
+      const consigneLigne = lignesActives.find(l => {
+        const art = articles.find(a => a.id === l.article_id)
+        return art?.nom === `CONSIGNE ${type}`
+      })
+      if (consigneLigne && consigneLigne.quantite > 0) {
+        const gplLigne = lignesActives.find(l => {
+          const art = articles.find(a => a.id === l.article_id)
+          return art?.nom === `GPL ${type}`
+        })
+        const gplQty = gplLigne?.quantite ?? 0
+        if (gplQty < consigneLigne.quantite) {
+          setError(`Impossible de vendre ${consigneLigne.quantite} CONSIGNE ${type} sans au moins ${consigneLigne.quantite} GPL ${type} (vous avez ${gplQty} GPL ${type}). La vente d'une bouteille vide est interdite.`)
+          return
+        }
+      }
+    }
+
     setSaving(true)
     const { data, error: rpcErr } = await supabase.rpc('creer_commande', {
       p_client_id: selectedClient.id, p_agence_id: agenceId || null,

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/contexts/AuthContext'
 import { genererFacturePDF, genererBonLivraisonPDF } from '@/lib/generatePDF'
 import CommLayout from '@/components/commercial/CommLayout'
 import { ArrowLeft, Loader2, FileText, CreditCard, Plus, Trash2, Download } from 'lucide-react'
@@ -20,6 +21,13 @@ const STATUT_LABEL = {
 export default function DetailCommande({ Layout = CommLayout, backPath = '/commercial/comm/commandes' }) {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { getModuleRoles } = useAuth()
+
+  // Rôles de l'utilisateur dans le module commercial
+  const moduleRoles = getModuleRoles('commercial')
+  // COMM et RESP_AGENCE facturent — CAISSE et VENTE encaissent — VENTE fait les deux
+  const peutFacturer = moduleRoles.some(r => ['COMM', 'RESP_AGENCE', 'VENTE'].includes(r))
+  const peutEncaisser = moduleRoles.some(r => ['CAISSE', 'VENTE'].includes(r))
 
   const [commande, setCommande] = useState(null)
   const [magasins, setMagasins] = useState([])
@@ -34,6 +42,7 @@ export default function DetailCommande({ Layout = CommLayout, backPath = '/comme
   const [magasinId, setMagasinId]       = useState('')
 
   const [showRegler, setShowRegler]     = useState(false)
+  const [typeReglement, setTypeReglement] = useState('')  // 'total' ou 'partiel'
   const [reglements, setReglements]     = useState([{ mode: 'cash', montant: '', banque_id: '', caisse_id: '', reference_cheque: '' }])
 
   const load = async () => {
@@ -98,8 +107,17 @@ export default function DetailCommande({ Layout = CommLayout, backPath = '/comme
     })
     setSaving(false)
     if (err) { setError(err.message); return }
-    setSuccess(data.statut === 'REGLEE' ? 'Facture réglée — bon de livraison généré.' : 'Paiement partiel — en attente validation DG.')
+
+    const hasCash = reglements.some(r => r.mode === 'cash' && Number(r.montant) > 0)
+    const cashTemp = hasCash && !peutEncaisser ? '' : hasCash && peutEncaisser && !moduleRoles.includes('CAISSE') ? ' Le cash reste dans votre caisse temporaire.' : ''
+
+    if (data.statut === 'REGLEE') {
+      setSuccess('Facture réglée — bon de livraison généré. Le magasinier a été notifié.' + cashTemp)
+    } else {
+      setSuccess('Paiement partiel — en attente de validation par le DG.' + cashTemp)
+    }
     setShowRegler(false)
+    setTypeReglement('')
     load()
   }
 
@@ -167,17 +185,22 @@ export default function DetailCommande({ Layout = CommLayout, backPath = '/comme
             {success && <div className="p-3 bg-green-50 text-green-700 text-sm rounded-xl border border-green-100">{success}</div>}
 
             <div className="flex flex-wrap gap-3">
-              {commande.statut === 'BROUILLON' && (
+              {commande.statut === 'BROUILLON' && peutFacturer && (
                 <button onClick={() => setShowFacturer(true)}
                   className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700">
                   <FileText size={16} /> Facturer
                 </button>
               )}
-              {facture && ['EN_ATTENTE', 'PARTIELLE'].includes(facture.statut) && (
-                <button onClick={() => { setReglements([{ mode: 'cash', montant: '', banque_id: '', caisse_id: '', reference_cheque: '' }]); setShowRegler(true) }}
+              {facture && ['EN_ATTENTE', 'PARTIELLE'].includes(facture.statut) && peutEncaisser && (
+                <button onClick={() => { setReglements([{ mode: 'cash', montant: '', banque_id: '', caisse_id: '', reference_cheque: '' }]); setTypeReglement(''); setShowRegler(true) }}
                   className="flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-xl text-sm font-bold hover:bg-green-700">
                   <CreditCard size={16} /> Régler
                 </button>
+              )}
+              {facture && ['EN_ATTENTE', 'PARTIELLE'].includes(facture.statut) && !peutEncaisser && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5">
+                  <p className="text-xs text-amber-700 font-medium">En attente de règlement par la caisse</p>
+                </div>
               )}
             </div>
           </div>
@@ -213,6 +236,36 @@ export default function DetailCommande({ Layout = CommLayout, backPath = '/comme
             <div className="bg-white rounded-t-3xl sm:rounded-2xl p-6 max-w-lg w-full shadow-2xl max-h-[90vh] overflow-y-auto">
               <h3 className="text-lg font-bold text-gray-800 mb-1">Règlement</h3>
               <p className="text-sm text-gray-500 mb-4">Facture {facture.numero} — Reste à payer : {fmt(facture.montant_total - facture.montant_regle)}</p>
+
+              {/* Étape 1 : Choix total ou partiel */}
+              {!typeReglement && (
+                <div className="space-y-3">
+                  <p className="text-xs font-bold text-gray-400 uppercase mb-2">Type de règlement</p>
+                  <button onClick={() => {
+                    setTypeReglement('total')
+                    const reste = facture.montant_total - facture.montant_regle
+                    setReglements([{ mode: 'cash', montant: reste.toString(), banque_id: '', caisse_id: '', reference_cheque: '' }])
+                  }} className="w-full text-left bg-green-50 border border-green-200 rounded-xl p-4 hover:bg-green-100 transition-colors">
+                    <p className="font-bold text-green-800">Règlement total</p>
+                    <p className="text-xs text-green-600">Le client paye la totalité : {fmt(facture.montant_total - facture.montant_regle)}</p>
+                  </button>
+                  <button onClick={() => {
+                    setTypeReglement('partiel')
+                    setReglements([{ mode: 'cash', montant: '', banque_id: '', caisse_id: '', reference_cheque: '' }])
+                  }} className="w-full text-left bg-amber-50 border border-amber-200 rounded-xl p-4 hover:bg-amber-100 transition-colors">
+                    <p className="font-bold text-amber-800">Règlement partiel</p>
+                    <p className="text-xs text-amber-600">Le client ne paye qu'une partie. Le reste ira en validation chez le DG.</p>
+                  </button>
+                  <button onClick={() => setShowRegler(false)} className="w-full py-2.5 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 font-medium mt-2">Annuler</button>
+                </div>
+              )}
+
+              {/* Étape 2 : Saisie des paiements */}
+              {typeReglement && (
+                <>
+                  <div className={`rounded-xl px-3 py-2 mb-4 text-xs font-medium ${typeReglement === 'total' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
+                    {typeReglement === 'total' ? 'Règlement total — le client paye tout' : 'Règlement partiel — la partie non payée sera une dette validée par le DG'}
+                  </div>
 
               <div className="space-y-3 mb-4">
                 {reglements.map((r, idx) => (
@@ -277,12 +330,14 @@ export default function DetailCommande({ Layout = CommLayout, backPath = '/comme
               </div>
 
               <div className="flex gap-3">
-                <button onClick={() => setShowRegler(false)} className="flex-1 py-2.5 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 font-medium">Annuler</button>
+                <button onClick={() => { setShowRegler(false); setTypeReglement('') }} className="flex-1 py-2.5 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 font-medium">Annuler</button>
                 <button onClick={handleRegler} disabled={saving}
                   className="flex-1 py-2.5 text-sm bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 disabled:opacity-50">
                   {saving ? 'Enregistrement...' : 'Valider le règlement'}
                 </button>
               </div>
+                </>
+              )}
             </div>
           </div>
         )}

@@ -29,15 +29,14 @@ export default function Livraisons() {
 
   const confirmerLivraison = async (bl) => {
     setSaving(bl.id); setError(''); setSuccess('')
-    const { error: err } = await supabase.rpc('confirmer_livraison', { p_bl_id: bl.id })
-    if (err) {
-      // Fallback si la RPC n'existe pas
-      await supabase.from('bons_livraison').update({ statut: 'LIVRE', livre_par: user.id, date_livraison: new Date().toISOString() }).eq('id', bl.id)
-      const commandeId = bl.factures?.commandes?.id
-      if (commandeId) await supabase.from('commandes').update({ statut: 'LIVREE' }).eq('id', commandeId)
-    }
+    const { data, error: err } = await supabase.rpc('confirmer_livraison', { p_bl_id: bl.id })
     setSaving(null)
-    setSuccess('Livraison confirmée.')
+    if (err) {
+      // Afficher l'erreur (stock insuffisant, etc.)
+      setError(err.message)
+      return
+    }
+    setSuccess('Livraison confirmée — sortie de stock enregistrée.')
     load()
   }
 
