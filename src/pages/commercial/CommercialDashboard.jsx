@@ -7,6 +7,8 @@ const MODULE_CODE = 'commercial'
 const ROLE_REDIRECT = [
   { role: 'DG',          path: '/commercial/dg' },
   { role: 'AUDIT',       path: '/commercial/audit' },
+  { role: 'DFC',         path: '/commercial/dex' },
+  { role: 'COMPTABLE',   path: '/commercial/comptable' },
   { role: 'RESP_AGENCE', path: '/commercial/agence' },
   { role: 'COMM',        path: '/commercial/comm' },
   { role: 'VENTE',       path: '/commercial/vente' },

@@ -76,6 +76,10 @@ import MagasinLayout       from './components/commercial/MagasinLayout'
 import CaisseLayout        from './components/commercial/CaisseLayout'
 import DGCommLayout        from './components/commercial/DGCommLayout'
 import AuditLayout         from './components/commercial/AuditLayout'
+import DEXLayout           from './components/commercial/DEXLayout'
+import ComptableLayout     from './components/commercial/ComptableLayout'
+import DEXDashboard        from './pages/commercial/dex/DEXDashboard'
+import ComptableDashboard  from './pages/commercial/comptable/ComptableDashboard'
 import AuditDashboard      from './pages/commercial/audit/AuditDashboard'
 import EcartsAudit         from './pages/commercial/audit/EcartsAudit'
 
@@ -118,7 +122,7 @@ import SaisirJustificatif  from './pages/besoins/justif/SaisirJustificatif'
 */
 
 const BESOINS_ALL = ['emet_besoin', 'DFC', 'DG', 'analyse_besoin', 'decaissement', 'Justif']
-const COMMERCIAL_ALL = ['COMM', 'RESP_AGENCE', 'VENTE', 'CAISSE', 'MAGASIN', 'DG', 'AUDIT']
+const COMMERCIAL_ALL = ['COMM', 'RESP_AGENCE', 'VENTE', 'CAISSE', 'MAGASIN', 'DG', 'AUDIT', 'DFC', 'COMPTABLE']
 
 function App() {
   return (
@@ -171,6 +175,7 @@ function App() {
           <Route path="/commercial/comm/factures"             element={<ProtectedRoute module="commercial" moduleRoles={['COMM']}><ListeFactures Layout={CommLayout} basePath="/commercial/comm/commandes" /></ProtectedRoute>} />
           <Route path="/commercial/comm/clients"              element={<ProtectedRoute module="commercial" moduleRoles={['COMM']}><ListeClientsComm Layout={CommLayout} /></ProtectedRoute>} />
           <Route path="/commercial/comm/analyses"             element={<ProtectedRoute module="commercial" moduleRoles={['COMM']}><AnalysesVentes Layout={CommLayout} /></ProtectedRoute>} />
+          <Route path="/commercial/comm/rapports-caisse"      element={<ProtectedRoute module="commercial" moduleRoles={['COMM']}><RapportsCaisse Layout={CommLayout} /></ProtectedRoute>} />
 
           {/* ── Commercial : Resp Agence ────────────────────────────── */}
           <Route path="/commercial/agence"                    element={<ProtectedRoute module="commercial" moduleRoles={['RESP_AGENCE']}><AgenceDashboard /></ProtectedRoute>} />
@@ -183,6 +188,7 @@ function App() {
           <Route path="/commercial/agence/clients"            element={<ProtectedRoute module="commercial" moduleRoles={['RESP_AGENCE']}><ListeClientsComm Layout={RespAgenceLayout} /></ProtectedRoute>} />
           <Route path="/commercial/agence/validations"        element={<ProtectedRoute module="commercial" moduleRoles={['RESP_AGENCE']}><ValidationsClotures /></ProtectedRoute>} />
           <Route path="/commercial/agence/retours"            element={<ProtectedRoute module="commercial" moduleRoles={['RESP_AGENCE']}><RetoursProduits /></ProtectedRoute>} />
+          <Route path="/commercial/agence/rapports-caisse"    element={<ProtectedRoute module="commercial" moduleRoles={['RESP_AGENCE']}><RapportsCaisse Layout={RespAgenceLayout} /></ProtectedRoute>} />
 
           {/* ── Commercial : Vente (commercial terrain) ────────────── */}
           <Route path="/commercial/vente"                     element={<ProtectedRoute module="commercial" moduleRoles={['VENTE']}><VenteDashboard /></ProtectedRoute>} />
@@ -231,6 +237,20 @@ function App() {
           <Route path="/commercial/audit/inventaires"         element={<ProtectedRoute module="commercial" moduleRoles={['AUDIT']}><InventairesPage Layout={AuditLayout} /></ProtectedRoute>} />
           <Route path="/commercial/audit/journal"             element={<ProtectedRoute module="commercial" moduleRoles={['AUDIT']}><JournalAudit Layout={AuditLayout} /></ProtectedRoute>} />
           <Route path="/commercial/audit/analyses"            element={<ProtectedRoute module="commercial" moduleRoles={['AUDIT']}><AnalysesVentes Layout={AuditLayout} /></ProtectedRoute>} />
+
+          {/* ── Commercial : DEX ────────────────────────────────── */}
+          <Route path="/commercial/dex"                        element={<ProtectedRoute module="commercial" moduleRoles={['DFC']}><DEXDashboard /></ProtectedRoute>} />
+          <Route path="/commercial/dex/analyses"               element={<ProtectedRoute module="commercial" moduleRoles={['DFC']}><AnalysesVentes Layout={DEXLayout} /></ProtectedRoute>} />
+          <Route path="/commercial/dex/rapports-caisse"        element={<ProtectedRoute module="commercial" moduleRoles={['DFC']}><RapportsCaisse Layout={DEXLayout} /></ProtectedRoute>} />
+          <Route path="/commercial/dex/rapports-stock"         element={<ProtectedRoute module="commercial" moduleRoles={['DFC']}><RapportsStock Layout={DEXLayout} /></ProtectedRoute>} />
+          <Route path="/commercial/dex/audit"                  element={<ProtectedRoute module="commercial" moduleRoles={['DFC']}><JournalAudit Layout={DEXLayout} /></ProtectedRoute>} />
+
+          {/* ── Commercial : Comptable ──────────────────────────── */}
+          <Route path="/commercial/comptable"                  element={<ProtectedRoute module="commercial" moduleRoles={['COMPTABLE']}><ComptableDashboard /></ProtectedRoute>} />
+          <Route path="/commercial/comptable/analyses"         element={<ProtectedRoute module="commercial" moduleRoles={['COMPTABLE']}><AnalysesVentes Layout={ComptableLayout} /></ProtectedRoute>} />
+          <Route path="/commercial/comptable/rapports-caisse"  element={<ProtectedRoute module="commercial" moduleRoles={['COMPTABLE']}><RapportsCaisse Layout={ComptableLayout} /></ProtectedRoute>} />
+          <Route path="/commercial/comptable/rapports-stock"   element={<ProtectedRoute module="commercial" moduleRoles={['COMPTABLE']}><RapportsStock Layout={ComptableLayout} /></ProtectedRoute>} />
+          <Route path="/commercial/comptable/audit"            element={<ProtectedRoute module="commercial" moduleRoles={['COMPTABLE']}><JournalAudit Layout={ComptableLayout} /></ProtectedRoute>} />
 
           {/* ── Besoins : Employé (tous les rôles besoins) ────────── */}
           <Route path="/besoins/employe"               element={<ProtectedRoute module="besoins" moduleRoles={BESOINS_ALL}><EmployeDashboard /></ProtectedRoute>} />

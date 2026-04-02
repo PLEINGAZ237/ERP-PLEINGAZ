@@ -3254,3 +3254,483 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- === FIN ===
+-- ============================================================
+-- FIX : NOTIFICATIONS À CHAQUE ÉTAPE DU WORKFLOW
+-- ============================================================
+
+-- 1. Facture créée → CAISSE notifiée "Facture à encaisser"
+CREATE OR REPLACE FUNCTION facturer_commande(p_commande_id uuid, p_magasin_id uuid)
+RETURNS jsonb AS $$
+DECLARE
+  v_numero text; v_facture_id uuid; v_total numeric; v_client_id uuid;
+  v_est_centre boolean; v_ligne record; v_prix numeric;
+BEGIN
+  SELECT client_id INTO v_client_id FROM commandes WHERE id = p_commande_id AND statut IN ('BROUILLON', 'A_FACTURER');
+  IF NOT FOUND THEN RAISE EXCEPTION 'Commande non facturable'; END IF;
+  SELECT est_centre_enfuteur INTO v_est_centre FROM magasins WHERE id = p_magasin_id;
+  IF v_est_centre THEN
+    FOR v_ligne IN SELECT lc.id, lc.article_id, a.categorie
+      FROM lignes_commande lc JOIN articles a ON a.id = lc.article_id WHERE lc.commande_id = p_commande_id
+    LOOP
+      IF v_ligne.categorie = 'GPL' THEN
+        SELECT prix INTO v_prix FROM prix_centre_enfuteur WHERE article_id = v_ligne.article_id;
+        IF FOUND THEN UPDATE lignes_commande SET prix_unitaire = v_prix WHERE id = v_ligne.id; END IF;
+      END IF;
+    END LOOP;
+  END IF;
+  PERFORM appliquer_seuils_commande(p_commande_id, p_magasin_id);
+  SELECT COALESCE(SUM(quantite * prix_unitaire), 0) INTO v_total FROM lignes_commande WHERE commande_id = p_commande_id;
+  v_numero := generer_numero_facture();
+  INSERT INTO factures (numero, commande_id, magasin_id, facture_par, montant_total, statut)
+  VALUES (v_numero, p_commande_id, p_magasin_id, auth.uid(), v_total, 'EN_ATTENTE')
+  RETURNING id INTO v_facture_id;
+  UPDATE commandes SET statut = 'FACTUREE' WHERE id = p_commande_id;
+
+  -- ★ NOTIFIER LA CAISSE qu'une facture est prête à encaisser
+  PERFORM notifier_role('CAISSE', 'commercial', 'Facture à encaisser',
+    'Facture ' || v_numero || ' — Montant: ' || v_total || ' F. En attente de règlement.',
+    'action', '/commercial/caisse/encaissements', v_facture_id);
+
+  PERFORM log_audit('Commande facturée', 'commercial', 'factures', v_facture_id,
+    jsonb_build_object('numero', v_numero, 'montant', v_total));
+
+  RETURN jsonb_build_object('facture_id', v_facture_id, 'numero', v_numero, 'montant_total', v_total);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+-- 2. Livraison confirmée → notifier celui qui a créé la commande
+CREATE OR REPLACE FUNCTION confirmer_livraison(p_bl_id uuid)
+RETURNS jsonb AS $$
+DECLARE
+  v_bl record; v_facture record; v_commande record;
+  v_js_id uuid; v_ligne record; v_stock_dispo integer;
+BEGIN
+  SELECT * INTO v_bl FROM bons_livraison WHERE id = p_bl_id AND statut = 'A_LIVRER';
+  IF NOT FOUND THEN RAISE EXCEPTION 'Bon de livraison non trouvé ou déjà livré'; END IF;
+
+  SELECT * INTO v_facture FROM factures WHERE id = v_bl.facture_id;
+  SELECT * INTO v_commande FROM commandes WHERE id = v_facture.commande_id;
+
+  SELECT id INTO v_js_id FROM journees_stock
+  WHERE magasin_id = v_bl.magasin_id AND statut = 'OUVERTE' LIMIT 1;
+
+  -- Vérifier stock suffisant
+  IF v_js_id IS NOT NULL THEN
+    FOR v_ligne IN
+      SELECT lc.article_id, lc.quantite, a.nom as article_nom
+      FROM lignes_commande lc JOIN articles a ON a.id = lc.article_id
+      WHERE lc.commande_id = v_commande.id
+    LOOP
+      SELECT COALESCE(stock_ouverture + total_entrees - total_sorties, 0) INTO v_stock_dispo
+      FROM lignes_journee_stock WHERE journee_stock_id = v_js_id AND article_id = v_ligne.article_id;
+      v_stock_dispo := COALESCE(v_stock_dispo, 0);
+      IF v_stock_dispo < v_ligne.quantite THEN
+        RAISE EXCEPTION 'Stock insuffisant pour % : disponible %, demandé %', v_ligne.article_nom, v_stock_dispo, v_ligne.quantite;
+      END IF;
+    END LOOP;
+  END IF;
+
+  -- Confirmer
+  UPDATE bons_livraison SET statut = 'LIVRE', livre_par = auth.uid(), date_livraison = now() WHERE id = p_bl_id;
+  UPDATE commandes SET statut = 'LIVREE' WHERE id = v_commande.id;
+
+  -- Sortie stock auto
+  IF v_js_id IS NOT NULL THEN
+    FOR v_ligne IN SELECT lc.article_id, lc.quantite FROM lignes_commande lc WHERE lc.commande_id = v_commande.id LOOP
+      INSERT INTO mouvements_stock (journee_stock_id, article_id, type, motif, quantite, description, bon_livraison_id, effectue_par)
+      VALUES (v_js_id, v_ligne.article_id, 'sortie', 'livraison', v_ligne.quantite, 'Livraison ' || v_bl.numero || ' (auto)', p_bl_id, auth.uid());
+      UPDATE lignes_journee_stock SET total_sorties = total_sorties + v_ligne.quantite
+      WHERE journee_stock_id = v_js_id AND article_id = v_ligne.article_id;
+    END LOOP;
+  END IF;
+
+  -- ★ NOTIFIER celui qui a créé la commande
+  PERFORM envoyer_notification(v_commande.cree_par, 'Commande livrée',
+    'La commande ' || v_commande.numero || ' a été livrée par le magasinier.',
+    'succes', 'commercial', NULL, v_commande.id);
+
+  PERFORM log_audit('Livraison confirmée', 'commercial', 'bons_livraison', p_bl_id,
+    jsonb_build_object('commande', v_commande.numero, 'magasin_id', v_bl.magasin_id));
+
+  RETURN jsonb_build_object('statut', 'LIVRE', 'bl_numero', v_bl.numero);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+-- 3. Sortie véhicule créée → VENTE (commercial terrain) notifié
+CREATE OR REPLACE FUNCTION creer_sortie_vehicule(
+  p_vehicule_id uuid, p_vendeur_id uuid, p_itineraire_id uuid,
+  p_magasin_id uuid, p_agence_id uuid, p_hors_ville boolean, p_articles jsonb
+) RETURNS jsonb AS $$
+DECLARE
+  v_numero text; v_sv_id uuid; v_item jsonb; v_js_id uuid;
+BEGIN
+  -- Vérifier que le vendeur n'a pas de sortie non bouclée
+  IF EXISTS (SELECT 1 FROM sorties_vehicules WHERE vendeur_id = p_vendeur_id AND statut IN ('EN_COURS', 'RETOUR_PARTIEL')) THEN
+    RAISE EXCEPTION 'Ce commercial a déjà une sortie non bouclée. Il doit boucler sa sortie avant d''en recevoir une nouvelle.';
+  END IF;
+
+  v_numero := generer_numero_sv();
+  INSERT INTO sorties_vehicules (numero, vehicule_id, vendeur_id, itineraire_id, magasin_id, agence_id, hors_ville, cree_par)
+  VALUES (v_numero, p_vehicule_id, p_vendeur_id, p_itineraire_id, p_magasin_id, p_agence_id, COALESCE(p_hors_ville, false), auth.uid())
+  RETURNING id INTO v_sv_id;
+
+  -- Journée stock ouverte
+  SELECT id INTO v_js_id FROM journees_stock WHERE magasin_id = p_magasin_id AND statut = 'OUVERTE' LIMIT 1;
+
+  FOR v_item IN SELECT * FROM jsonb_array_elements(p_articles) LOOP
+    INSERT INTO lignes_sortie_vehicule (sortie_vehicule_id, article_id, quantite_sortie)
+    VALUES (v_sv_id, (v_item->>'article_id')::uuid, (v_item->>'quantite')::int);
+
+    -- Sortie stock auto
+    IF v_js_id IS NOT NULL THEN
+      INSERT INTO mouvements_stock (journee_stock_id, article_id, type, motif, quantite, description, effectue_par)
+      VALUES (v_js_id, (v_item->>'article_id')::uuid, 'sortie', 'chargement_vehicule',
+        (v_item->>'quantite')::int, 'Chargement ' || v_numero, auth.uid());
+      UPDATE lignes_journee_stock SET total_sorties = total_sorties + (v_item->>'quantite')::int
+      WHERE journee_stock_id = v_js_id AND article_id = (v_item->>'article_id')::uuid;
+    END IF;
+  END LOOP;
+
+  -- ★ NOTIFIER LE VENDEUR que sa sortie est prête
+  PERFORM envoyer_notification(p_vendeur_id, 'Sortie véhicule assignée',
+    'Sortie ' || v_numero || ' créée pour vous. Votre stock véhicule est prêt.',
+    'action', 'commercial', '/commercial/vente/stock', v_sv_id);
+
+  PERFORM log_audit('Sortie véhicule créée', 'commercial', 'sorties_vehicules', v_sv_id,
+    jsonb_build_object('numero', v_numero, 'vendeur_id', p_vendeur_id));
+
+  RETURN jsonb_build_object('id', v_sv_id, 'numero', v_numero);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+-- 4. Versement commercial → CAISSE notifiée
+CREATE OR REPLACE FUNCTION verser_en_caisse(p_sortie_id uuid, p_caisse_id uuid, p_montant numeric)
+RETURNS jsonb AS $$
+DECLARE v_id uuid; v_sv record;
+BEGIN
+  SELECT * INTO v_sv FROM sorties_vehicules WHERE id = p_sortie_id AND vendeur_id = auth.uid();
+  IF NOT FOUND THEN RAISE EXCEPTION 'Sortie non trouvée'; END IF;
+
+  INSERT INTO versements_commerciaux (sortie_vehicule_id, caisse_id, montant, verse_par)
+  VALUES (p_sortie_id, p_caisse_id, p_montant, auth.uid())
+  RETURNING id INTO v_id;
+
+  -- ★ NOTIFIER LA CAISSE
+  PERFORM notifier_role('CAISSE', 'commercial', 'Versement commercial à valider',
+    'Le commercial a versé ' || p_montant || ' F. En attente de validation.',
+    'action', '/commercial/caisse/versements', v_id);
+
+  PERFORM log_audit('Versement en caisse', 'commercial', 'versements_commerciaux', v_id,
+    jsonb_build_object('montant', p_montant));
+
+  RETURN jsonb_build_object('id', v_id);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+-- 5. Clôture caisse → RESP AGENCE notifié pour double signature
+CREATE OR REPLACE FUNCTION cloturer_journee_caisse(p_journee_caisse_id uuid, p_solde_physique numeric)
+RETURNS jsonb AS $$
+DECLARE v_jc record; v_theo numeric; v_ecart numeric;
+BEGIN
+  SELECT * INTO v_jc FROM journees_caisse WHERE id = p_journee_caisse_id AND statut = 'OUVERTE';
+  IF NOT FOUND THEN RAISE EXCEPTION 'Journée de caisse non ouverte'; END IF;
+
+  v_theo := v_jc.solde_ouverture + v_jc.total_encaissements - v_jc.total_decaissements
+    - v_jc.total_versements + v_jc.total_transferts_in - v_jc.total_transferts_out;
+  v_ecart := COALESCE(p_solde_physique, v_theo) - v_theo;
+
+  UPDATE journees_caisse SET
+    statut = 'CLOTUREE', solde_cloture = v_theo, solde_physique = COALESCE(p_solde_physique, v_theo),
+    ecart = v_ecart, cloturee_par = auth.uid(),
+    ecart_bloque = CASE WHEN v_ecart != 0 THEN true ELSE false END
+  WHERE id = p_journee_caisse_id;
+
+  -- ★ NOTIFIER LE CHEF D'AGENCE pour validation (double signature)
+  PERFORM notifier_role('RESP_AGENCE', 'commercial', 'Clôture caisse à valider',
+    'La caissière a clôturé sa caisse. Écart: ' || v_ecart || ' F. En attente de validation.',
+    'action', '/commercial/agence/validations', p_journee_caisse_id);
+
+  PERFORM log_audit('Caisse clôturée (attente chef)', 'commercial', 'journees_caisse', p_journee_caisse_id,
+    jsonb_build_object('ecart', v_ecart, 'solde_theorique', v_theo));
+
+  RETURN jsonb_build_object('solde_theorique', v_theo, 'solde_physique', COALESCE(p_solde_physique, v_theo), 'ecart', v_ecart);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+-- 6. Clôture stock → RESP AGENCE notifié pour double signature
+-- (Note: la clôture stock se fait manuellement dans GestionStock.jsx,
+--  on ajoute la notification après le UPDATE)
+-- Pour cela on crée une fonction dédiée:
+CREATE OR REPLACE FUNCTION notifier_cloture_stock(p_journee_stock_id uuid)
+RETURNS void AS $$
+BEGIN
+  PERFORM notifier_role('RESP_AGENCE', 'commercial', 'Clôture stock à valider',
+    'Le magasinier a clôturé son stock. En attente de validation.',
+    'action', '/commercial/agence/validations', p_journee_stock_id);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+-- 7. Chef d'agence valide clôture → notifier DG si écart
+CREATE OR REPLACE FUNCTION valider_cloture_caisse(p_journee_caisse_id uuid)
+RETURNS jsonb AS $$
+DECLARE v_jc record;
+BEGIN
+  SELECT * INTO v_jc FROM journees_caisse WHERE id = p_journee_caisse_id AND statut = 'CLOTUREE';
+  IF NOT FOUND THEN RAISE EXCEPTION 'Journée non en attente de validation'; END IF;
+
+  UPDATE journees_caisse SET statut = 'VALIDEE', validee_par_chef = auth.uid() WHERE id = p_journee_caisse_id;
+
+  -- ★ Si écart, notifier le DG
+  IF v_jc.ecart != 0 THEN
+    PERFORM notifier_role('DG', 'commercial', 'Écart caisse à traiter',
+      'Écart de ' || v_jc.ecart || ' F sur la caisse. Clôture validée par le chef d''agence.',
+      'alerte', '/commercial/dg', p_journee_caisse_id);
+  END IF;
+
+  PERFORM log_audit('Clôture caisse validée par chef', 'commercial', 'journees_caisse', p_journee_caisse_id, '{}'::jsonb);
+  RETURN jsonb_build_object('statut', 'VALIDEE');
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+-- 8. Chef d'agence valide clôture stock → notifier DG si écart
+CREATE OR REPLACE FUNCTION valider_cloture_stock(p_journee_stock_id uuid)
+RETURNS jsonb AS $$
+DECLARE v_js record; v_total_ecart numeric;
+BEGIN
+  SELECT * INTO v_js FROM journees_stock WHERE id = p_journee_stock_id AND statut = 'CLOTUREE';
+  IF NOT FOUND THEN RAISE EXCEPTION 'Journée non en attente de validation'; END IF;
+
+  UPDATE journees_stock SET statut = 'VALIDEE', validee_par_chef = auth.uid() WHERE id = p_journee_stock_id;
+
+  -- Calculer écart total
+  SELECT COALESCE(SUM(ABS(COALESCE(stock_physique, stock_ouverture + total_entrees - total_sorties) - (stock_ouverture + total_entrees - total_sorties))), 0)
+  INTO v_total_ecart FROM lignes_journee_stock WHERE journee_stock_id = p_journee_stock_id;
+
+  -- ★ Si écart, notifier le DG
+  IF v_total_ecart > 0 THEN
+    PERFORM notifier_role('DG', 'commercial', 'Écart stock à traiter',
+      'Écart total de ' || v_total_ecart || ' unités. Clôture stock validée par le chef d''agence.',
+      'alerte', '/commercial/dg', p_journee_stock_id);
+  END IF;
+
+  PERFORM log_audit('Clôture stock validée par chef', 'commercial', 'journees_stock', p_journee_stock_id, '{}'::jsonb);
+  RETURN jsonb_build_object('statut', 'VALIDEE');
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+-- ============================================================
+-- RÉSUMÉ DES NOTIFICATIONS
+-- ============================================================
+-- Commande facturée         → CAISSE notifiée
+-- Règlement total           → MAGASIN notifié (BL généré)
+-- Règlement partiel         → DG notifié (dette à valider)
+-- DG valide dette           → MAGASIN notifié (BL généré)
+-- DG rejette dette          → créateur notifié
+-- Livraison confirmée       → créateur de la commande notifié
+-- Sortie véhicule créée     → VENTE (vendeur) notifié
+-- Versement commercial      → CAISSE notifiée
+-- Clôture caisse            → RESP AGENCE notifié
+-- Clôture stock             → RESP AGENCE notifié
+-- Chef valide clôture caisse + écart → DG notifié
+-- Chef valide clôture stock + écart  → DG notifié
+-- Retour produit initié     → DG notifié
+-- DG valide retour          → MAGASIN notifié
+-- DG rejette retour         → initiateur notifié
+-- Déconsignation initiée    → DG notifié
+-- DG valide déconsignation  → COMM notifié
+-- Ordre publicité créé      → AUDIT notifié
+-- AUDIT valide publicité    → MAGASIN notifié
+-- ============================================================
+-- ============================================================
+-- FIX CAISSE : MOTIFS AUTO + DEX + COMPTABLE
+-- ============================================================
+
+-- 1. Motifs auto avec nom client dans enregistrer_reglement
+CREATE OR REPLACE FUNCTION enregistrer_reglement(p_facture_id uuid, p_reglements jsonb)
+RETURNS jsonb AS $$
+DECLARE
+  v_regl jsonb; v_total_regle numeric := 0; v_montant_total numeric;
+  v_facture_statut text; v_commande_id uuid;
+  v_jc_id uuid; v_caisse_id uuid;
+  v_user_is_caisse boolean := false;
+  v_magasin_id uuid;
+  v_client_nom text;
+BEGIN
+  SELECT f.montant_total, f.commande_id, f.magasin_id INTO v_montant_total, v_commande_id, v_magasin_id
+  FROM factures f WHERE f.id = p_facture_id AND f.statut IN ('EN_ATTENTE', 'PARTIELLE');
+  IF NOT FOUND THEN RAISE EXCEPTION 'Facture non réglable'; END IF;
+
+  -- Nom du client pour le motif
+  SELECT c.nom_interne INTO v_client_nom
+  FROM commandes cmd JOIN clients c ON c.id = cmd.client_id
+  WHERE cmd.id = v_commande_id;
+
+  -- Vérifier si l'utilisateur a le rôle CAISSE
+  SELECT EXISTS (
+    SELECT 1 FROM service_role_module srm
+    JOIN roles r ON r.id = srm.role_id
+    JOIN modules m ON m.id = srm.module_id
+    JOIN profiles p ON p.service_id = srm.service_id
+    WHERE p.id = auth.uid() AND r.nom = 'CAISSE' AND m.code = 'commercial'
+  ) INTO v_user_is_caisse;
+
+  FOR v_regl IN SELECT * FROM jsonb_array_elements(p_reglements) LOOP
+    v_caisse_id := NULLIF(v_regl->>'caisse_id', '')::uuid;
+
+    INSERT INTO reglements (facture_id, mode, montant, banque_id, reference_cheque, encaisse_par, caisse_id, est_caisse_temporaire)
+    VALUES (
+      p_facture_id, v_regl->>'mode', (v_regl->>'montant')::numeric,
+      NULLIF(v_regl->>'banque_id', '')::uuid, NULLIF(v_regl->>'reference_cheque', ''),
+      auth.uid(), v_caisse_id,
+      CASE WHEN (v_regl->>'mode') = 'cash' AND NOT v_user_is_caisse THEN true ELSE false END
+    );
+    v_total_regle := v_total_regle + (v_regl->>'montant')::numeric;
+
+    -- Mouvement caisse auto si cash + caisse + caissière
+    IF (v_regl->>'mode') = 'cash' AND v_caisse_id IS NOT NULL AND v_user_is_caisse THEN
+      SELECT id INTO v_jc_id FROM journees_caisse
+      WHERE caisse_id = v_caisse_id AND statut = 'OUVERTE' LIMIT 1;
+
+      IF v_jc_id IS NOT NULL THEN
+        INSERT INTO mouvements_caisse (journee_caisse_id, type, montant, mode, description, facture_id, effectue_par)
+        VALUES (v_jc_id, 'encaissement', (v_regl->>'montant')::numeric, 'cash',
+          'Vente client ' || COALESCE(v_client_nom, '—'), p_facture_id, auth.uid());
+        UPDATE journees_caisse SET total_encaissements = total_encaissements + (v_regl->>'montant')::numeric
+        WHERE id = v_jc_id;
+      END IF;
+    END IF;
+  END LOOP;
+
+  UPDATE factures SET montant_regle = montant_regle + v_total_regle WHERE id = p_facture_id;
+  SELECT montant_regle INTO v_total_regle FROM factures WHERE id = p_facture_id;
+
+  IF v_total_regle >= v_montant_total THEN
+    UPDATE factures SET statut = 'REGLEE' WHERE id = p_facture_id;
+    UPDATE commandes SET statut = 'REGLEE' WHERE id = v_commande_id;
+    INSERT INTO bons_livraison (numero, facture_id, magasin_id)
+    SELECT generer_numero_bl(), p_facture_id, v_magasin_id;
+    v_facture_statut := 'REGLEE';
+
+    PERFORM notifier_role('MAGASIN', 'commercial', 'Commande à livrer',
+      'Commande ' || COALESCE(v_client_nom, '') || ' — BL généré.',
+      'action', '/commercial/magasin/livraisons', p_facture_id);
+  ELSE
+    UPDATE factures SET statut = 'EN_ATTENTE_DG' WHERE id = p_facture_id;
+    UPDATE commandes SET statut = 'EN_ATTENTE_DG' WHERE id = v_commande_id;
+    v_facture_statut := 'EN_ATTENTE_DG';
+
+    PERFORM notifier_role('DG', 'commercial', 'Dette client à valider',
+      'Client ' || COALESCE(v_client_nom, '') || ' — paiement partiel.',
+      'action', '/commercial/dg', p_facture_id);
+  END IF;
+
+  PERFORM log_audit('Règlement enregistré', 'commercial', 'reglements', p_facture_id,
+    jsonb_build_object('statut', v_facture_statut, 'montant', v_total_regle));
+
+  RETURN jsonb_build_object('statut', v_facture_statut, 'montant_regle', v_total_regle);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+-- 2. Motif auto avec nom commercial dans valider_versement_commercial
+DROP FUNCTION IF EXISTS valider_versement_commercial(uuid);
+CREATE OR REPLACE FUNCTION valider_versement_commercial(p_versement_id uuid)
+RETURNS jsonb AS $$
+DECLARE v_vc record; v_jc_id uuid; v_commercial_nom text;
+BEGIN
+  SELECT * INTO v_vc FROM versements_commerciaux WHERE id = p_versement_id AND statut = 'EN_ATTENTE';
+  IF NOT FOUND THEN RAISE EXCEPTION 'Versement non trouvé'; END IF;
+
+  -- Nom du commercial
+  SELECT (prenom || ' ' || nom) INTO v_commercial_nom FROM profiles WHERE id = v_vc.verse_par;
+
+  UPDATE versements_commerciaux SET statut = 'VALIDE', valide_par = auth.uid(), date_validation = now()
+  WHERE id = p_versement_id;
+
+  -- Créer encaissement en caisse avec motif "Vente commercial xxx"
+  SELECT id INTO v_jc_id FROM journees_caisse WHERE caisse_id = v_vc.caisse_id AND statut = 'OUVERTE' LIMIT 1;
+  IF v_jc_id IS NOT NULL THEN
+    INSERT INTO mouvements_caisse (journee_caisse_id, type, montant, mode, description, effectue_par)
+    VALUES (v_jc_id, 'encaissement', v_vc.montant, 'cash',
+      'Vente commercial ' || COALESCE(v_commercial_nom, '—'), auth.uid());
+    UPDATE journees_caisse SET total_encaissements = total_encaissements + v_vc.montant WHERE id = v_jc_id;
+  END IF;
+
+  PERFORM log_audit('Versement commercial validé', 'commercial', 'versements_commerciaux', p_versement_id,
+    jsonb_build_object('montant', v_vc.montant, 'commercial', v_commercial_nom));
+
+  RETURN jsonb_build_object('statut', 'VALIDE');
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+-- 3. Créer rôles DEX et COMPTABLE + services
+DO $$
+DECLARE v_dept_id uuid; v_module_id uuid; v_role_dex_id uuid; v_role_compta_id uuid;
+BEGIN
+  SELECT id INTO v_dept_id FROM departements WHERE nom ILIKE '%commercial%' LIMIT 1;
+  SELECT id INTO v_module_id FROM modules WHERE code = 'commercial' LIMIT 1;
+
+  IF v_dept_id IS NULL OR v_module_id IS NULL THEN RETURN; END IF;
+
+  -- Rôle DEX
+  INSERT INTO roles (nom, description) VALUES ('DEX', 'Directeur d''exploitation')
+  ON CONFLICT DO NOTHING;
+  SELECT id INTO v_role_dex_id FROM roles WHERE nom = 'DEX';
+
+  -- Rôle COMPTABLE
+  INSERT INTO roles (nom, description) VALUES ('COMPTABLE', 'Comptable')
+  ON CONFLICT DO NOTHING;
+  SELECT id INTO v_role_compta_id FROM roles WHERE nom = 'COMPTABLE';
+
+  -- Service DEX
+  IF NOT EXISTS (SELECT 1 FROM services WHERE nom = 'DEX' AND departement_id = v_dept_id) THEN
+    INSERT INTO services (nom, departement_id) VALUES ('DEX', v_dept_id);
+  END IF;
+
+  -- Service COMPTABILITE
+  IF NOT EXISTS (SELECT 1 FROM services WHERE nom = 'COMPTABILITE' AND departement_id = v_dept_id) THEN
+    INSERT INTO services (nom, departement_id) VALUES ('COMPTABILITE', v_dept_id);
+  END IF;
+
+  -- Liaisons service_role_module
+  INSERT INTO service_role_module (service_id, role_id, module_id)
+  SELECT s.id, v_role_dex_id, v_module_id FROM services s WHERE s.nom = 'DEX' AND s.departement_id = v_dept_id
+  ON CONFLICT DO NOTHING;
+
+  INSERT INTO service_role_module (service_id, role_id, module_id)
+  SELECT s.id, v_role_compta_id, v_module_id FROM services s WHERE s.nom = 'COMPTABILITE' AND s.departement_id = v_dept_id
+  ON CONFLICT DO NOTHING;
+END $$;
+-- ============================================================
+-- SUPABASE STORAGE : Bucket justificatifs
+-- À exécuter dans Supabase SQL Editor
+-- ============================================================
+
+-- Créer le bucket
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('justificatifs', 'justificatifs', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Policy upload pour authenticated
+CREATE POLICY "upload_justificatifs" ON storage.objects
+FOR INSERT TO authenticated
+WITH CHECK (bucket_id = 'justificatifs');
+
+-- Policy lecture pour authenticated
+CREATE POLICY "read_justificatifs" ON storage.objects
+FOR SELECT TO authenticated
+USING (bucket_id = 'justificatifs');
+
+-- Policy suppression pour authenticated
+CREATE POLICY "delete_justificatifs" ON storage.objects
+FOR DELETE TO authenticated
+USING (bucket_id = 'justificatifs');

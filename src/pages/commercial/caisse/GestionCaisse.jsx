@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import CaisseLayout from '@/components/commercial/CaisseLayout'
+import UploadJustificatif from '@/components/UploadJustificatif'
 import { Loader2, Plus, ArrowDownToLine, ArrowUpFromLine, Landmark, ArrowRightLeft, Lock, Unlock } from 'lucide-react'
 
 const fmt = (n) => n != null ? Number(n).toLocaleString('fr-FR') + ' F' : '—'
@@ -177,10 +178,6 @@ export default function GestionCaisse() {
                 className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl text-sm font-bold hover:bg-green-700">
                 <ArrowDownToLine size={16} /> Encaissement
               </button>
-              <button onClick={() => { setMvtForm({ ...mvtForm, type: 'decaissement' }); setShowMvt(true) }}
-                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-xl text-sm font-bold hover:bg-red-700">
-                <ArrowUpFromLine size={16} /> Décaissement
-              </button>
               <button onClick={() => { setMvtForm({ ...mvtForm, type: 'versement_banque' }); setShowMvt(true) }}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700">
                 <Landmark size={16} /> Versement banque
@@ -216,14 +213,19 @@ export default function GestionCaisse() {
             ) : (
               <div className="divide-y divide-gray-50">
                 {mouvements.map(m => (
-                  <div key={m.id} className="px-5 py-3 flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-700">{TYPE_LABELS[m.type]}</p>
-                      <p className="text-xs text-gray-400">{m.description ?? '—'} · {m.profiles?.prenom} {m.profiles?.nom} · {new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+                  <div key={m.id} className="px-5 py-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">{TYPE_LABELS[m.type]}</p>
+                        <p className="text-xs text-gray-400">{m.description ?? '—'} · {m.profiles?.prenom} {m.profiles?.nom} · {new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+                      </div>
+                      <p className={`font-bold ${['encaissement', 'transfert_in'].includes(m.type) ? 'text-green-600' : 'text-red-600'}`}>
+                        {['encaissement', 'transfert_in'].includes(m.type) ? '+' : '-'}{fmt(m.montant)}
+                      </p>
                     </div>
-                    <p className={`font-bold ${['encaissement', 'transfert_in'].includes(m.type) ? 'text-green-600' : 'text-red-600'}`}>
-                      {['encaissement', 'transfert_in'].includes(m.type) ? '+' : '-'}{fmt(m.montant)}
-                    </p>
+                    {m.type === 'versement_banque' && (
+                      <UploadJustificatif tableRef="mouvements_caisse" enregistrementId={m.id} />
+                    )}
                   </div>
                 ))}
               </div>

@@ -118,8 +118,10 @@ export default function GestionStock() {
     // Clôturer la journée
     await supabase.from('journees_stock')
       .update({ statut: 'CLOTUREE', cloturee_par: user.id }).eq('id', journee.id)
+    // Notifier le chef d'agence
+    await supabase.rpc('notifier_cloture_stock', { p_journee_stock_id: journee.id })
     setSaving(false)
-    setSuccess('Stock clôturé — en attente de validation par le chef d\'agence.')
+    setSuccess('Stock clôturé — chef d\'agence notifié pour validation.')
     setShowCloture(false)
     loadJournee()
   }

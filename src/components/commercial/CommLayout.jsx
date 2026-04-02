@@ -1,5 +1,5 @@
 import CommercialLayout from '@/components/commercial/CommercialLayout'
-import { LayoutDashboard, ShoppingCart, FileText, List, BarChart3 } from 'lucide-react'
+import { LayoutDashboard, ShoppingCart, FileText, List, BarChart3, Wallet } from 'lucide-react'
 
 const NAV = [
   { path: '/commercial/comm', label: 'Tableau de bord', icon: LayoutDashboard },
@@ -7,6 +7,7 @@ const NAV = [
   { path: '/commercial/comm/factures', label: 'Factures', icon: FileText },
   { path: '/commercial/comm/clients', label: 'Clients', icon: List },
   { path: '/commercial/comm/analyses', label: 'Analyses ventes', icon: BarChart3 },
+  { path: '/commercial/comm/rapports-caisse', label: 'Rapports caisse', icon: Wallet },
 ]
 
 export default function CommLayout({ children }) {

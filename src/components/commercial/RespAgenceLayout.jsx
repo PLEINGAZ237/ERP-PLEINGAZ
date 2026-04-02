@@ -1,5 +1,5 @@
 import CommercialLayout from '@/components/commercial/CommercialLayout'
-import { LayoutDashboard, ShoppingCart, FileText, Truck, List, CheckSquare, RotateCcw } from 'lucide-react'
+import { LayoutDashboard, ShoppingCart, FileText, Truck, List, CheckSquare, RotateCcw, Wallet } from 'lucide-react'
 
 const NAV = [
   { path: '/commercial/agence', label: 'Tableau de bord', icon: LayoutDashboard },
@@ -9,6 +9,7 @@ const NAV = [
   { path: '/commercial/agence/retours', label: 'Retours produits', icon: RotateCcw },
   { path: '/commercial/agence/validations', label: 'Validations', icon: CheckSquare },
   { path: '/commercial/agence/clients', label: 'Clients', icon: List },
+  { path: '/commercial/agence/rapports-caisse', label: 'Rapports caisse', icon: Wallet },
 ]
 
 export default function RespAgenceLayout({ children }) {
