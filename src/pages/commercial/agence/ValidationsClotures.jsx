@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import RespAgenceLayout from '@/components/commercial/RespAgenceLayout'
+import UploadJustificatif from '@/components/UploadJustificatif'
 import { Loader2, CheckCircle, XCircle, Wallet, Package } from 'lucide-react'
 
 const fmt = (n) => n != null ? Number(n).toLocaleString('fr-FR') + ' F' : '—'
@@ -82,6 +83,7 @@ export default function ValidationsClotures() {
                     className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700 disabled:opacity-50">
                     <CheckCircle size={12} /> {saving === jc.id ? 'Validation...' : 'Valider la clôture'}
                   </button>
+                  <UploadJustificatif tableRef="journees_caisse" enregistrementId={jc.id} />
                 </div>
               ))}
             </div>
@@ -109,6 +111,7 @@ export default function ValidationsClotures() {
                     className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700 disabled:opacity-50">
                     <CheckCircle size={12} /> {saving === js.id ? 'Validation...' : 'Valider la clôture'}
                   </button>
+                  <UploadJustificatif tableRef="journees_stock" enregistrementId={js.id} />
                 </div>
               ))}
             </div>

@@ -4,7 +4,7 @@ import { LayoutDashboard, AlertTriangle, FileText, Wallet, Package, ClipboardLis
 const NAV = [
   { path: '/commercial/dg', label: 'Tableau de bord', icon: LayoutDashboard },
   { path: '/commercial/dg/dettes', label: 'Dettes en attente', icon: AlertTriangle },
-  { path: '/commercial/dg/retours', label: 'Retours & Décons.', icon: RotateCcw },
+  { path: '/commercial/dg/retours', label: 'Retours & Décons.', icon: RotateCcw, Gift },
   { path: '/commercial/dg/publicites', label: 'Ordres de publicité', icon: Gift },
   { path: '/commercial/dg/analyses', label: 'Analyses ventes', icon: BarChart3 },
   { path: '/commercial/dg/rapports-caisse', label: 'Rapports caisse', icon: Wallet },

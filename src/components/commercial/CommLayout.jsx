@@ -6,7 +6,7 @@ const NAV = [
   { path: '/commercial/comm/commandes', label: 'Commandes', icon: ShoppingCart },
   { path: '/commercial/comm/factures', label: 'Factures', icon: FileText },
   { path: '/commercial/comm/clients', label: 'Clients', icon: List },
-  { path: '/commercial/comm/analyses', label: 'Analyses ventes', icon: BarChart3 },
+  { path: '/commercial/comm/analyses', label: 'Analyses ventes', icon: BarChart3, Wallet },
   { path: '/commercial/comm/rapports-caisse', label: 'Rapports caisse', icon: Wallet },
 ]
 

@@ -10,11 +10,10 @@ const CAT_LABELS = { GPL: 'GPL', CONSIGNE: 'Consigne', ACCESSOIRE: 'Accessoire' 
 
 export default function CreerCommande({ Layout = CommLayout, backPath = '/commercial/comm' }) {
   const navigate = useNavigate()
-  const { profile, user, getModuleRoles } = useAuth()
+  const { profile } = useAuth()
   const [clients, setClients] = useState([])
   const [articles, setArticles] = useState([])
   const [agences, setAgences] = useState([])
-  const [stockVehicule, setStockVehicule] = useState([])
   const [searchClient, setSearchClient] = useState('')
   const [selectedClient, setSelectedClient] = useState(null)
   const [agenceId, setAgenceId] = useState('')
@@ -24,8 +23,6 @@ export default function CreerCommande({ Layout = CommLayout, backPath = '/commer
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [step, setStep] = useState(1)
-
-  const isVente = getModuleRoles('commercial').includes('VENTE')
 
   useEffect(() => {
     const load = async () => {
@@ -38,13 +35,6 @@ export default function CreerCommande({ Layout = CommLayout, backPath = '/commer
       setClients(cl ?? [])
       setArticles(art ?? [])
       setAgences(ag ?? [])
-
-      // Si VENTE : charger le stock véhicule
-      if (isVente && user) {
-        const { data: sv } = await supabase.rpc('get_stock_vehicule', { p_vendeur_id: user.id })
-        setStockVehicule(sv ?? [])
-      }
-
       setLoading(false)
     }
     load()
@@ -67,15 +57,7 @@ export default function CreerCommande({ Layout = CommLayout, backPath = '/commer
     setLignes(articles.map(a => ({ article_id: a.id, nom: a.nom, categorie: a.categorie, quantite: 0, prix_unitaire: prixMap[a.id] ?? 0 })))
   }
 
-  const updateQty = (artId, qty) => {
-    let q = Math.max(0, parseInt(qty) || 0)
-    // VENTE : ne peut pas vendre plus que son stock véhicule
-    if (isVente) {
-      const max = getStockRestant(artId)
-      if (max !== null && q > max) q = max
-    }
-    setLignes(prev => prev.map(l => l.article_id === artId ? { ...l, quantite: q } : l))
-  }
+  const updateQty = (artId, qty) => setLignes(prev => prev.map(l => l.article_id === artId ? { ...l, quantite: Math.max(0, parseInt(qty) || 0) } : l))
   const removeLigne = (artId) => setLignes(prev => prev.filter(l => l.article_id !== artId))
   const lignesActives = lignes.filter(l => l.quantite > 0)
   const total = lignesActives.reduce((s, l) => s + l.quantite * l.prix_unitaire, 0)
@@ -84,18 +66,6 @@ export default function CreerCommande({ Layout = CommLayout, backPath = '/commer
     setError('')
     if (!selectedClient) { setError('Veuillez sélectionner un client.'); return }
     if (lignesActives.length === 0) { setError('Ajoutez au moins un article avec une quantité.'); return }
-
-    // VENTE : vérifier que chaque quantité ≤ stock véhicule
-    if (isVente) {
-      for (const l of lignesActives) {
-        const restant = getStockRestant(l.article_id)
-        if (restant !== null && l.quantite > restant) {
-          const art = articles.find(a => a.id === l.article_id)
-          setError(`Stock véhicule insuffisant pour ${art?.nom ?? '?'} : restant ${restant}, demandé ${l.quantite}.`)
-          return
-        }
-      }
-    }
 
     // Validation consigne : une consigne ne peut être vendue que si le GPL du même type est acheté pour la même quantité ou plus
     const consigneTypes = ['50KG', '12.5KG', '6KG']
@@ -128,19 +98,8 @@ export default function CreerCommande({ Layout = CommLayout, backPath = '/commer
     setTimeout(() => navigate(backPath), 2000)
   }
 
-  // Pour VENTE : filtrer articles par stock véhicule
-  const articlesAffiches = isVente && stockVehicule.length > 0
-    ? articles.filter(a => stockVehicule.some(sv => sv.article_id === a.id && sv.stock_restant > 0))
-    : articles
-
-  const getStockRestant = (artId) => {
-    if (!isVente) return null
-    const sv = stockVehicule.find(s => s.article_id === artId)
-    return sv ? sv.stock_restant : 0
-  }
-
   const grouped = {}
-  articlesAffiches.forEach(a => { if (!grouped[a.categorie]) grouped[a.categorie] = []; grouped[a.categorie].push(a) })
+  articles.forEach(a => { if (!grouped[a.categorie]) grouped[a.categorie] = []; grouped[a.categorie].push(a) })
 
   if (loading) return <Layout><div className="flex items-center justify-center py-32"><Loader2 className="animate-spin text-blue-500" size={28} /></div></Layout>
 
@@ -189,16 +148,8 @@ export default function CreerCommande({ Layout = CommLayout, backPath = '/commer
                       if (!ligne) return null
                       return (
                         <div key={art.id} className="flex items-center gap-3 px-3 py-2.5 bg-gray-50 rounded-lg">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-700">{ligne.nom}</p>
-                            <p className="text-[10px] text-gray-400">
-                              {fmt(ligne.prix_unitaire)} / unité
-                              {isVente && getStockRestant(art.id) !== null && (
-                                <span className="ml-2 text-blue-600 font-bold">· Stock véhicule : {getStockRestant(art.id)}</span>
-                              )}
-                            </p>
-                          </div>
-                          <input type="number" min="0" max={isVente ? (getStockRestant(art.id) ?? undefined) : undefined} value={ligne.quantite || ''} onChange={e => updateQty(art.id, e.target.value)} placeholder="Qté"
+                          <div className="flex-1 min-w-0"><p className="text-sm font-medium text-gray-700">{ligne.nom}</p><p className="text-[10px] text-gray-400">{fmt(ligne.prix_unitaire)} / unité</p></div>
+                          <input type="number" min="0" value={ligne.quantite || ''} onChange={e => updateQty(art.id, e.target.value)} placeholder="Qté"
                             className="w-20 border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-center focus:ring-2 focus:ring-blue-500/20 outline-none" />
                           <p className="text-sm font-bold text-gray-700 w-24 text-right">{fmt(ligne.quantite * ligne.prix_unitaire)}</p>
                         </div>

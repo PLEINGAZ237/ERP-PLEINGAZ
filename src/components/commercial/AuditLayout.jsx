@@ -5,7 +5,7 @@ const NAV = [
   { path: '/commercial/audit', label: 'Tableau de bord', icon: LayoutDashboard },
   { path: '/commercial/audit/ecarts', label: 'Écarts à valider', icon: AlertTriangle },
   { path: '/commercial/audit/publicites', label: 'Ordres de publicité', icon: Gift },
-  { path: '/commercial/audit/analyses', label: 'Analyses ventes', icon: BarChart3 },
+  { path: '/commercial/audit/analyses', label: 'Analyses ventes', icon: BarChart3, Gift },
   { path: '/commercial/audit/inventaires', label: 'Inventaires', icon: ClipboardList },
   { path: '/commercial/audit/rapports-caisse', label: 'Rapports caisse', icon: Wallet },
   { path: '/commercial/audit/rapports-stock', label: 'Rapports stock', icon: Package },
