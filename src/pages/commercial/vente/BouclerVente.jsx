@@ -45,7 +45,7 @@ export default function BouclerVente() {
   const handleVersement = async () => {
     if (!caisse_id || !montant || Number(montant) <= 0) { setError('Sélectionnez une caisse et un montant.'); return }
     setError(''); setSaving(true)
-    const { error: err } = await supabase.rpc('verser_en_caisse', { p_caisse_id: caisse_id, p_montant: Number(montant) })
+    const { error: err } = await supabase.rpc('verser_en_caisse', { p_sortie_id: sortie.id, p_caisse_id: caisse_id, p_montant: Number(montant) })
     setSaving(false)
     if (err) { setError(err.message); return }
     setSuccess(`Versement de ${fmt(Number(montant))} envoyé — en attente de validation par la caissière.`)

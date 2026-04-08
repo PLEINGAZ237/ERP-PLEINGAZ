@@ -105,6 +105,38 @@ export default function Livraisons() {
                     </div>
                   </div>
 
+                  {/* Bouteilles pleines/vides pour GPL */}
+                  {(() => {
+                    const types = ['50KG', '12.5KG', '6KG']
+                    const rows = types.map(t => {
+                      const gpl = lignesCmd.find(lc => lc.articles?.nom === `GPL ${t}`)
+                      const consigne = lignesCmd.find(lc => lc.articles?.nom === `CONSIGNE ${t}`)
+                      if (!gpl) return null
+                      const qGpl = gpl.quantite
+                      const qCons = consigne?.quantite ?? 0
+                      const pleines = qGpl
+                      const vides = qGpl - qCons
+                      return { type: t, pleines, vides }
+                    }).filter(Boolean)
+                    if (rows.length === 0) return null
+                    return (
+                      <div className="bg-blue-50 rounded-lg p-3 mb-3 border border-blue-100">
+                        <p className="text-[10px] font-bold text-blue-600 uppercase mb-2">Bouteilles pleines / vides</p>
+                        <div className="space-y-1">
+                          {rows.map(r => (
+                            <div key={r.type} className="flex justify-between text-xs">
+                              <span className="text-blue-700 font-medium">{r.type}</span>
+                              <span className="text-blue-800">
+                                <span className="text-green-700 font-bold">{r.pleines} pleines</span> à donner
+                                {r.vides > 0 && <> · <span className="text-amber-700 font-bold">{r.vides} vides</span> à recevoir</>}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })()}
+
                   {bl.statut === 'A_LIVRER' && (
                     <button onClick={() => confirmerLivraison(bl)} disabled={saving === bl.id}
                       className="w-full flex items-center justify-center gap-2 py-2.5 bg-green-600 text-white rounded-xl text-sm font-bold hover:bg-green-700 disabled:opacity-50 transition-colors">

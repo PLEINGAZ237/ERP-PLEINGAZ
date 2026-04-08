@@ -14,6 +14,7 @@ const ROLE_REDIRECT = [
   { role: 'VENTE',       path: '/commercial/vente' },
   { role: 'CAISSE',      path: '/commercial/caisse' },
   { role: 'MAGASIN',     path: '/commercial/magasin' },
+  { role: 'CONTROLEUR_FLUX', path: '/commercial/controleur' },
 ]
 
 export default function CommercialDashboard() {

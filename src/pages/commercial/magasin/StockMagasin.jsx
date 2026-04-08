@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase'
 import MagasinLayout from '@/components/commercial/MagasinLayout'
 import { Loader2, Package } from 'lucide-react'
 
-export default function StockMagasin() {
+export default function StockMagasin({ Layout = MagasinLayout }) {
   const [magasins, setMagasins] = useState([])
   const [selectedMagasin, setSelectedMagasin] = useState('')
   const [lignes, setLignes] = useState([])
@@ -43,10 +43,10 @@ export default function StockMagasin() {
     groupedLignes[cat].push(l)
   })
 
-  if (loading) return <MagasinLayout><div className="flex items-center justify-center py-32"><Loader2 className="animate-spin text-green-500" size={28} /></div></MagasinLayout>
+  if (loading) return <Layout><div className="flex items-center justify-center py-32"><Loader2 className="animate-spin text-green-500" size={28} /></div></Layout>
 
   return (
-    <MagasinLayout>
+    <Layout>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-gray-800">Mon stock</h1>
@@ -91,6 +91,6 @@ export default function StockMagasin() {
           </table>
         </div>
       )}
-    </MagasinLayout>
+    </Layout>
   )
 }

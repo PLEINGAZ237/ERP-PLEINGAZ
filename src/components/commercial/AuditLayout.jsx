@@ -1,9 +1,10 @@
 import CommercialLayout from '@/components/commercial/CommercialLayout'
-import { LayoutDashboard, AlertTriangle, ClipboardList, History, Wallet, Package, BarChart3 } from 'lucide-react'
+import { LayoutDashboard, AlertTriangle, ClipboardList, History, Wallet, Package, BarChart3, Gift } from 'lucide-react'
 
 const NAV = [
   { path: '/commercial/audit', label: 'Tableau de bord', icon: LayoutDashboard },
   { path: '/commercial/audit/ecarts', label: 'Écarts à valider', icon: AlertTriangle },
+  { path: '/commercial/audit/publicites', label: 'Ordres de publicité', icon: Gift },
   { path: '/commercial/audit/analyses', label: 'Analyses ventes', icon: BarChart3 },
   { path: '/commercial/audit/inventaires', label: 'Inventaires', icon: ClipboardList },
   { path: '/commercial/audit/rapports-caisse', label: 'Rapports caisse', icon: Wallet },

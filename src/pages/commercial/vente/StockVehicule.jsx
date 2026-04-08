@@ -16,7 +16,7 @@ export default function StockVehicule() {
       const { data } = await supabase.from('sorties_vehicules')
         .select('*, vehicules(immatriculation, nom), itineraires(nom), lignes_sortie_vehicule(*, articles(nom, categorie))')
         .eq('vendeur_id', user.id)
-        .in('statut', ['EN_COURS', 'CHARGEMENT', 'EN_VENTE'])
+        .in('statut', ['EN_COURS', 'EN_VENTE', 'RETOUR', 'RETOUR_PARTIEL'])
         .order('created_at', { ascending: false })
         .limit(1).maybeSingle()
       setSortie(data)

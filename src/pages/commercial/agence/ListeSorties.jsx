@@ -19,9 +19,10 @@ export default function ListeSorties() {
   useEffect(() => {
     const load = async () => {
       setLoading(true)
-      const { data } = await supabase.from('sorties_vehicules')
-        .select('*, vehicules(immatriculation, nom), profiles!vendeur_id(nom, prenom), profiles!initie_par(nom, prenom), itineraires(nom), magasins!magasin_source_id(nom)')
+      const { data, error: err } = await supabase.from('sorties_vehicules')
+        .select('*, vehicules(immatriculation, nom), itineraires(nom), magasins(nom)')
         .order('created_at', { ascending: false })
+      if (err) console.error('Erreur chargement sorties:', err)
       setSorties(data ?? [])
       setLoading(false)
     }
@@ -66,12 +67,12 @@ export default function ListeSorties() {
                 {filtered.map(s => (
                   <tr key={s.id} className="hover:bg-gray-50/50 cursor-pointer" onClick={() => navigate(`/commercial/agence/sorties/${s.id}`)}>
                     <td className="px-5 py-3 font-mono text-xs text-teal-600">{s.numero}</td>
-                    <td className="px-5 py-3 font-medium text-gray-700">{s.vehicules?.immatriculation}</td>
-                    <td className="px-5 py-3 text-gray-600">{s.profiles?.prenom} {s.profiles?.nom}</td>
+                    <td className="px-5 py-3 font-medium text-gray-700">{s.vehicules?.immatriculation ?? '—'}</td>
+                    <td className="px-5 py-3 text-gray-600">—</td>
                     <td className="px-5 py-3 text-gray-500">{s.itineraires?.nom ?? '—'}</td>
-                    <td className="px-5 py-3 text-gray-500">{s.magasins?.nom}</td>
+                    <td className="px-5 py-3 text-gray-500">{s.magasins?.nom ?? '—'}</td>
                     <td className="px-5 py-3 text-gray-400 text-xs">{new Date(s.created_at).toLocaleDateString('fr-FR')}</td>
-                    <td className="px-5 py-3"><span className={`px-2 py-1 rounded-full text-[10px] font-bold ${STATUT_STYLE[s.statut] ?? ''}`}>{s.statut.replace(/_/g, ' ')}</span></td>
+                    <td className="px-5 py-3"><span className={`px-2 py-1 rounded-full text-[10px] font-bold ${STATUT_STYLE[s.statut] ?? ''}`}>{s.statut?.replace(/_/g, ' ')}</span></td>
                   </tr>
                 ))}
               </tbody>
@@ -82,10 +83,10 @@ export default function ListeSorties() {
               <div key={s.id} onClick={() => navigate(`/commercial/agence/sorties/${s.id}`)} className="p-4 active:bg-gray-50 cursor-pointer">
                 <div className="flex justify-between items-start mb-1">
                   <p className="font-mono text-xs text-teal-600 font-medium">{s.numero}</p>
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${STATUT_STYLE[s.statut] ?? ''}`}>{s.statut.replace(/_/g, ' ')}</span>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${STATUT_STYLE[s.statut] ?? ''}`}>{s.statut?.replace(/_/g, ' ')}</span>
                 </div>
-                <p className="text-sm font-medium text-gray-800">{s.vehicules?.immatriculation} — {s.profiles?.prenom} {s.profiles?.nom}</p>
-                <p className="text-xs text-gray-400 mt-1">{s.itineraires?.nom ?? '—'} · {new Date(s.created_at).toLocaleDateString('fr-FR')}</p>
+                <p className="text-sm font-medium text-gray-800">{s.vehicules?.immatriculation ?? '—'}</p>
+                <p className="text-xs text-gray-400 mt-1">{s.itineraires?.nom ?? '—'} · {s.magasins?.nom ?? '—'} · {new Date(s.created_at).toLocaleDateString('fr-FR')}</p>
               </div>
             ))}
           </div>
