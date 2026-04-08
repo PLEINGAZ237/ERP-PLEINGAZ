@@ -28,9 +28,13 @@ export default function DGCommDashboard() {
     setFactures(fac ?? [])
     setCaisses(jc ?? [])
     setStocks(js ?? [])
-    const allFac = await supabase.from('factures').select('montant_total, montant_regle')
-    const ca = (allFac.data ?? []).reduce((s, f) => s + Number(f.montant_total), 0)
-    const regle = (allFac.data ?? []).reduce((s, f) => s + Number(f.montant_regle), 0)
+    const allFac = await supabase.from('factures').select('montant_total, montant_regle, statut')
+    const facList = allFac.data ?? []
+    const ca = facList.reduce((s, f) => s + (parseFloat(f.montant_total) || 0), 0)
+    const regle = facList.reduce((s, f) => s + (parseFloat(f.montant_regle) || 0), 0)
+    const dettesTotal = facList
+      .filter(f => ['EN_ATTENTE_DG', 'DETTE_VALIDEE'].includes(f.statut))
+      .reduce((s, f) => s + ((parseFloat(f.montant_total) || 0) - (parseFloat(f.montant_regle) || 0)), 0)
     const ecCaisse = (jc ?? []).filter(j => j.statut === 'CLOTUREE' && j.ecart !== 0 && j.ecart !== null).length
     const ecStock = (js ?? []).filter(j => {
       return j.statut === 'CLOTUREE' && (j.lignes_journee_stock ?? []).some(l => {
@@ -38,7 +42,7 @@ export default function DGCommDashboard() {
         return l.stock_physique !== null && l.stock_physique !== theo
       })
     }).length
-    setStats({ ca, regle, dettes: ca - regle, ecarts_caisse: ecCaisse, ecarts_stock: ecStock })
+    setStats({ ca, regle, dettes: dettesTotal, ecarts_caisse: ecCaisse, ecarts_stock: ecStock })
     setLoading(false)
   }
 

@@ -48,6 +48,7 @@ import MagasinDashboard    from './pages/commercial/magasin/MagasinDashboard'
 import Livraisons          from './pages/commercial/magasin/Livraisons'
 import CaisseDashboard     from './pages/commercial/caisse/CaisseDashboard'
 import DGCommDashboard     from './pages/commercial/dg/DGCommDashboard'
+import DGDettes            from './pages/commercial/dg/DGDettes'
 import RapportsCaisse      from './pages/commercial/dg/RapportsCaisse'
 import RapportsStock       from './pages/commercial/dg/RapportsStock'
 import InventairesPage     from './pages/commercial/dg/Inventaires'
@@ -230,7 +231,7 @@ function App() {
 
           {/* ── Commercial : DG (validation dettes + audit + rapports) ── */}
           <Route path="/commercial/dg"                        element={<ProtectedRoute module="commercial" moduleRoles={['DG']}><DGCommDashboard /></ProtectedRoute>} />
-          <Route path="/commercial/dg/dettes"                 element={<ProtectedRoute module="commercial" moduleRoles={['DG']}><DGCommDashboard /></ProtectedRoute>} />
+          <Route path="/commercial/dg/dettes"                 element={<ProtectedRoute module="commercial" moduleRoles={['DG']}><DGDettes /></ProtectedRoute>} />
           <Route path="/commercial/dg/rapports-caisse"        element={<ProtectedRoute module="commercial" moduleRoles={['DG']}><RapportsCaisse /></ProtectedRoute>} />
           <Route path="/commercial/dg/rapports-stock"         element={<ProtectedRoute module="commercial" moduleRoles={['DG']}><RapportsStock /></ProtectedRoute>} />
           <Route path="/commercial/dg/inventaires"            element={<ProtectedRoute module="commercial" moduleRoles={['DG']}><InventairesPage canCreate={false} canValidate={true} /></ProtectedRoute>} />

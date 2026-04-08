@@ -4,7 +4,7 @@ import CommLayout from '@/components/commercial/CommLayout'
 import { Loader2, TrendingUp, Users, MapPin, Package, Calendar } from 'lucide-react'
 
 const fmt = (n) => n != null ? Number(n).toLocaleString('fr-FR') + ' F' : '—'
-const fmtT = (n) => n != null ? Number(n).toFixed(3) + ' TM' : '—'
+const fmtT = (n) => { const v = parseFloat(n); return isNaN(v) ? '—' : v.toFixed(3) + ' TM' }
 
 export default function AnalysesVentes({ Layout = CommLayout }) {
   const [tab, setTab] = useState('clients')
@@ -33,9 +33,9 @@ export default function AnalysesVentes({ Layout = CommLayout }) {
     load()
   }, [])
 
-  const totalCA = clients.reduce((s, c) => s + Number(c.ca_total), 0)
-  const totalTonnage = clients.reduce((s, c) => s + Number(c.tonnage_total), 0)
-  const totalDettes = clients.reduce((s, c) => s + Number(c.total_dettes), 0)
+  const totalCA = clients.reduce((s, c) => s + (parseFloat(c.ca_total) || 0), 0)
+  const totalTonnage = clients.reduce((s, c) => s + (parseFloat(c.tonnage_total) || 0), 0)
+  const totalDettes = clients.reduce((s, c) => s + (parseFloat(c.total_dettes) || 0), 0)
 
   const TABS = [
     { id: 'clients', label: 'Par client', icon: Users },
