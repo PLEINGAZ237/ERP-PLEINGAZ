@@ -59,7 +59,7 @@ export default function GestionStock() {
     // Chercher une journée ouverte OU clôturée pour aujourd'hui
     const { data: js } = await supabase.from('journees_stock')
       .select('*').eq('magasin_id', selectedMagasin)
-      .in('statut', ['OUVERTE', 'CLOTUREE', 'VALIDEE'])
+      .in('statut', ['OUVERTE', 'EN_ATTENTE_SAISIE', 'CLOTUREE', 'VALIDEE'])
       .order('date_journee', { ascending: false }).limit(1).maybeSingle()
 
     setJournee(js)
@@ -102,6 +102,8 @@ export default function GestionStock() {
       }, { onConflict: 'journee_stock_id,article_id' })
     }
     setSaving(false)
+    // Passer en OUVERTE après saisie
+    await supabase.from('journees_stock').update({ statut: 'OUVERTE' }).eq('id', journee.id)
     setSuccess('Stock d\'ouverture enregistré.')
     loadJournee()
   }
@@ -187,20 +189,20 @@ export default function GestionStock() {
         <>
           {/* Barre d'état */}
           <div className={`rounded-xl p-4 mb-6 flex items-center justify-between ${
-            journee.statut === 'OUVERTE' ? 'bg-green-50 border border-green-200' :
+            ['OUVERTE', 'EN_ATTENTE_SAISIE'].includes(journee.statut) ? 'bg-green-50 border border-green-200' :
             journee.statut === 'VALIDEE' ? 'bg-blue-50 border border-blue-200' :
             'bg-gray-100 border border-gray-200'
           }`}>
             <div className="flex items-center gap-3">
-              {journee.statut === 'OUVERTE' ? <Package size={18} className="text-green-600" /> : <Lock size={18} className="text-gray-500" />}
+              {['OUVERTE', 'EN_ATTENTE_SAISIE'].includes(journee.statut) ? <Package size={18} className="text-green-600" /> : <Lock size={18} className="text-gray-500" />}
               <div>
                 <p className="font-bold text-gray-700 text-sm">
-                  {journee.statut === 'OUVERTE' ? (lignes.length === 0 ? 'Saisie du stock d\'ouverture' : 'Stock ouvert') : journee.statut === 'VALIDEE' ? 'Stock validé' : 'Stock clôturé — en attente de validation'}
+                  {['OUVERTE', 'EN_ATTENTE_SAISIE'].includes(journee.statut) ? (lignes.length === 0 ? 'Saisie du stock d\'ouverture' : 'Stock ouvert') : journee.statut === 'VALIDEE' ? 'Stock validé' : 'Stock clôturé — en attente de validation'}
                 </p>
                 <p className="text-xs text-gray-400">{new Date(journee.date_journee).toLocaleDateString('fr-FR')}</p>
               </div>
             </div>
-            {journee.statut === 'OUVERTE' && lignes.length > 0 && (
+            {['OUVERTE', 'EN_ATTENTE_SAISIE'].includes(journee.statut) && lignes.length > 0 && (
               <div className="flex gap-2">
                 <button onClick={() => setShowCloture(true)}
                   className="flex items-center gap-1 px-3 py-1.5 bg-gray-800 text-white rounded-lg text-xs font-bold hover:bg-gray-900">
@@ -211,7 +213,7 @@ export default function GestionStock() {
           </div>
 
           {/* SAISIE INITIALE — quand stock ouvert mais pas de lignes */}
-          {journee.statut === 'OUVERTE' && lignes.length === 0 && (
+          {['OUVERTE', 'EN_ATTENTE_SAISIE'].includes(journee.statut) && lignes.length === 0 && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
               <div className="px-5 py-3 border-b bg-amber-50">
                 <h2 className="font-semibold text-amber-800 text-sm">Saisie du stock d'ouverture</h2>
