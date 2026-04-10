@@ -20,6 +20,7 @@ export default function GestionStock() {
   const [mvtForm, setMvtForm] = useState({ article_id: '', type: 'entree', motif: 'approvisionnement', quantite: '', description: '' })
   const [showCloture, setShowCloture] = useState(false)
   const [stocksPhysiques, setStocksPhysiques] = useState({})
+  const [saisieInitiale, setSaisieInitiale] = useState({})
 
   const MOTIFS_ENTREE = [
     { value: 'approvisionnement', label: 'Approvisionnement' },
@@ -83,7 +84,25 @@ export default function GestionStock() {
     const { data, error: err } = await supabase.rpc('ouvrir_journee_stock', { p_magasin_id: selectedMagasin })
     setSaving(false)
     if (err) { setError(err.message); return }
-    setSuccess('Stock ouvert pour aujourd\'hui.')
+    setSuccess('Stock ouvert — saisissez le stock physique d\'ouverture.')
+    loadJournee()
+  }
+
+  const handleSaisieInitiale = async () => {
+    setError(''); setSaving(true)
+    const entries = Object.entries(saisieInitiale).filter(([, v]) => v !== '' && Number(v) >= 0)
+    if (entries.length === 0) { setError('Saisissez au moins un article.'); setSaving(false); return }
+    for (const [articleId, qte] of entries) {
+      await supabase.from('lignes_journee_stock').upsert({
+        journee_stock_id: journee.id,
+        article_id: articleId,
+        stock_ouverture: Number(qte),
+        total_entrees: 0,
+        total_sorties: 0,
+      }, { onConflict: 'journee_stock_id,article_id' })
+    }
+    setSaving(false)
+    setSuccess('Stock d\'ouverture enregistré.')
     loadJournee()
   }
 
@@ -176,12 +195,12 @@ export default function GestionStock() {
               {journee.statut === 'OUVERTE' ? <Package size={18} className="text-green-600" /> : <Lock size={18} className="text-gray-500" />}
               <div>
                 <p className="font-bold text-gray-700 text-sm">
-                  {journee.statut === 'OUVERTE' ? 'Stock ouvert' : journee.statut === 'VALIDEE' ? 'Stock validé' : 'Stock clôturé — en attente de validation'}
+                  {journee.statut === 'OUVERTE' ? (lignes.length === 0 ? 'Saisie du stock d\'ouverture' : 'Stock ouvert') : journee.statut === 'VALIDEE' ? 'Stock validé' : 'Stock clôturé — en attente de validation'}
                 </p>
                 <p className="text-xs text-gray-400">{new Date(journee.date_journee).toLocaleDateString('fr-FR')}</p>
               </div>
             </div>
-            {journee.statut === 'OUVERTE' && (
+            {journee.statut === 'OUVERTE' && lignes.length > 0 && (
               <div className="flex gap-2">
                 <button onClick={() => setShowCloture(true)}
                   className="flex items-center gap-1 px-3 py-1.5 bg-gray-800 text-white rounded-lg text-xs font-bold hover:bg-gray-900">
@@ -190,6 +209,42 @@ export default function GestionStock() {
               </div>
             )}
           </div>
+
+          {/* SAISIE INITIALE — quand stock ouvert mais pas de lignes */}
+          {journee.statut === 'OUVERTE' && lignes.length === 0 && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+              <div className="px-5 py-3 border-b bg-amber-50">
+                <h2 className="font-semibold text-amber-800 text-sm">Saisie du stock d'ouverture</h2>
+                <p className="text-xs text-amber-600 mt-0.5">Comptez et saisissez le stock physique de chaque article.</p>
+              </div>
+              <div className="divide-y divide-gray-50">
+                {['GPL', 'CONSIGNE', 'ACCESSOIRE'].map(cat => {
+                  const catArticles = articles.filter(a => a.categorie === cat)
+                  if (catArticles.length === 0) return null
+                  return (
+                    <div key={cat}>
+                      <div className="px-5 py-2 bg-gray-50"><span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{cat}</span></div>
+                      {catArticles.map(a => (
+                        <div key={a.id} className="flex items-center justify-between px-5 py-3 hover:bg-gray-50/50">
+                          <span className="text-sm font-medium text-gray-700">{a.nom}</span>
+                          <input type="number" min="0" placeholder="0"
+                            value={saisieInitiale[a.id] ?? ''}
+                            onChange={e => setSaisieInitiale(prev => ({ ...prev, [a.id]: e.target.value }))}
+                            className="w-24 border border-gray-200 rounded-lg px-3 py-2 text-sm text-center outline-none focus:border-green-400" />
+                        </div>
+                      ))}
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="px-5 py-4 border-t bg-gray-50/50 flex justify-end">
+                <button onClick={handleSaisieInitiale} disabled={saving}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white text-sm font-bold rounded-xl hover:bg-green-700 disabled:opacity-50">
+                  <Package size={15} /> {saving ? 'Enregistrement...' : 'Valider le stock d\'ouverture'}
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Tableau stock */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
