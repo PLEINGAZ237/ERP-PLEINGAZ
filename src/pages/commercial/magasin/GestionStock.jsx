@@ -93,17 +93,23 @@ export default function GestionStock() {
     const entries = Object.entries(saisieInitiale).filter(([, v]) => v !== '' && Number(v) >= 0)
     if (entries.length === 0) { setError('Saisissez au moins un article.'); setSaving(false); return }
     for (const [articleId, qte] of entries) {
-      await supabase.from('lignes_journee_stock').upsert({
-        journee_stock_id: journee.id,
-        article_id: articleId,
-        stock_ouverture: Number(qte),
-        total_entrees: 0,
-        total_sorties: 0,
-      }, { onConflict: 'journee_stock_id,article_id' })
+      // Update existing ligne or insert
+      const existing = lignes.find(l => l.article_id === articleId)
+      if (existing) {
+        await supabase.from('lignes_journee_stock').update({ stock_ouverture: Number(qte) }).eq('id', existing.id)
+      } else {
+        await supabase.from('lignes_journee_stock').insert({
+          journee_stock_id: journee.id,
+          article_id: articleId,
+          stock_ouverture: Number(qte),
+          total_entrees: 0,
+          total_sorties: 0,
+        })
+      }
     }
-    setSaving(false)
     // Passer en OUVERTE après saisie
     await supabase.from('journees_stock').update({ statut: 'OUVERTE' }).eq('id', journee.id)
+    setSaving(false)
     setSuccess('Stock d\'ouverture enregistré.')
     loadJournee()
   }
@@ -202,7 +208,7 @@ export default function GestionStock() {
                 <p className="text-xs text-gray-400">{new Date(journee.date_journee).toLocaleDateString('fr-FR')}</p>
               </div>
             </div>
-            {['OUVERTE', 'EN_ATTENTE_SAISIE'].includes(journee.statut) && lignes.length > 0 && (
+            {['OUVERTE', 'EN_ATTENTE_SAISIE'].includes(journee.statut) && lignes.length > 0 && !lignes.every(l => l.stock_ouverture === 0 && l.total_entrees === 0 && l.total_sorties === 0) && (
               <div className="flex gap-2">
                 <button onClick={() => setShowCloture(true)}
                   className="flex items-center gap-1 px-3 py-1.5 bg-gray-800 text-white rounded-lg text-xs font-bold hover:bg-gray-900">
@@ -212,8 +218,8 @@ export default function GestionStock() {
             )}
           </div>
 
-          {/* SAISIE INITIALE — quand stock ouvert mais pas de lignes */}
-          {['OUVERTE', 'EN_ATTENTE_SAISIE'].includes(journee.statut) && lignes.length === 0 && (
+          {/* SAISIE INITIALE — quand stock ouvert mais tout à 0 */}
+          {['OUVERTE', 'EN_ATTENTE_SAISIE'].includes(journee.statut) && lignes.every(l => l.stock_ouverture === 0 && l.total_entrees === 0 && l.total_sorties === 0) && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
               <div className="px-5 py-3 border-b bg-amber-50">
                 <h2 className="font-semibold text-amber-800 text-sm">Saisie du stock d'ouverture</h2>
@@ -221,20 +227,24 @@ export default function GestionStock() {
               </div>
               <div className="divide-y divide-gray-50">
                 {['GPL', 'CONSIGNE', 'ACCESSOIRE'].map(cat => {
-                  const catArticles = articles.filter(a => a.categorie === cat)
+                  const catArticles = (lignes.length > 0 ? lignes : articles.map(a => ({ article_id: a.id, articles: a }))).filter(l => (l.articles?.categorie ?? '') === cat)
                   if (catArticles.length === 0) return null
                   return (
                     <div key={cat}>
                       <div className="px-5 py-2 bg-gray-50"><span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{cat}</span></div>
-                      {catArticles.map(a => (
-                        <div key={a.id} className="flex items-center justify-between px-5 py-3 hover:bg-gray-50/50">
-                          <span className="text-sm font-medium text-gray-700">{a.nom}</span>
-                          <input type="number" min="0" placeholder="0"
-                            value={saisieInitiale[a.id] ?? ''}
-                            onChange={e => setSaisieInitiale(prev => ({ ...prev, [a.id]: e.target.value }))}
-                            className="w-24 border border-gray-200 rounded-lg px-3 py-2 text-sm text-center outline-none focus:border-green-400" />
-                        </div>
-                      ))}
+                      {catArticles.map(l => {
+                        const artId = l.article_id
+                        const artNom = l.articles?.nom
+                        return (
+                          <div key={artId} className="flex items-center justify-between px-5 py-3 hover:bg-gray-50/50">
+                            <span className="text-sm font-medium text-gray-700">{artNom}</span>
+                            <input type="number" min="0" placeholder="0"
+                              value={saisieInitiale[artId] ?? ''}
+                              onChange={e => setSaisieInitiale(prev => ({ ...prev, [artId]: e.target.value }))}
+                              className="w-24 border border-gray-200 rounded-lg px-3 py-2 text-sm text-center outline-none focus:border-green-400" />
+                          </div>
+                        )
+                      })}
                     </div>
                   )
                 })}

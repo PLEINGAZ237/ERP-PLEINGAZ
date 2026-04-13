@@ -26,7 +26,7 @@ export default function DetailCommande({ Layout = CommLayout, backPath = '/comme
   // Rôles de l'utilisateur dans le module commercial
   const moduleRoles = getModuleRoles('commercial')
   // COMM et RESP_AGENCE facturent — CAISSE et VENTE encaissent — VENTE fait les deux
-  const peutFacturer = moduleRoles.some(r => ['COMM', 'RESP_AGENCE', 'VENTE'].includes(r))
+  const peutFacturer = moduleRoles.some(r => ['COMM', 'RESP_AGENCE', 'VENTE', 'CAISSE', 'DG', 'DFC'].includes(r))
   const peutEncaisser = moduleRoles.some(r => ['CAISSE', 'VENTE'].includes(r))
 
   const [commande, setCommande] = useState(null)
