@@ -43,6 +43,7 @@ export default function DetailCommande({ Layout = CommLayout, backPath = '/comme
 
   const [showRegler, setShowRegler]     = useState(false)
   const [typeReglement, setTypeReglement] = useState('')  // 'total' ou 'partiel'
+  const [echeance, setEcheance]           = useState('')
   const [reglements, setReglements]     = useState([{ mode: 'cash', montant: '', banque_id: '', caisse_id: '', reference_cheque: '' }])
 
   const load = async () => {
@@ -93,6 +94,8 @@ export default function DetailCommande({ Layout = CommLayout, backPath = '/comme
 
   const handleRegler = async () => {
     if (totalReglement <= 0) { setError('Montant invalide.'); return }
+    const isPartiel = totalReglement < (facture.montant_total - facture.montant_regle)
+    if (isPartiel && !echeance) { setError('Saisissez la date d\'échéance de la dette.'); return }
     setError(''); setSaving(true)
 
     const { data, error: err } = await supabase.rpc('enregistrer_reglement', {
@@ -105,8 +108,14 @@ export default function DetailCommande({ Layout = CommLayout, backPath = '/comme
         caisse_id: r.mode === 'cash' ? r.caisse_id || null : null,
       })),
     })
+    if (err) { setSaving(false); setError(err.message); return }
+
+    // Sauvegarder l'échéance si paiement partiel
+    if (isPartiel && echeance) {
+      await supabase.from('factures').update({ echeance_dette: echeance }).eq('id', facture.id)
+    }
+
     setSaving(false)
-    if (err) { setError(err.message); return }
 
     const hasCash = reglements.some(r => r.mode === 'cash' && Number(r.montant) > 0)
     const cashTemp = hasCash && !peutEncaisser ? '' : hasCash && peutEncaisser && !moduleRoles.includes('CAISSE') ? ' Le cash reste dans votre caisse temporaire.' : ''
@@ -118,6 +127,7 @@ export default function DetailCommande({ Layout = CommLayout, backPath = '/comme
     }
     setShowRegler(false)
     setTypeReglement('')
+    setEcheance('')
     load()
   }
 
@@ -142,16 +152,23 @@ export default function DetailCommande({ Layout = CommLayout, backPath = '/comme
               <p className="font-bold text-gray-800">{commande.clients?.nom_interne}</p>
               <p className="text-xs text-gray-500">{commande.clients?.categories_clients?.nom}</p>
             </div>
+            {facture && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
               <h2 className="text-[10px] font-bold text-gray-400 uppercase mb-1">Total commande</h2>
               <p className="text-2xl font-black text-gray-800">{fmt(total)}</p>
             </div>
+            )}
             {facture && (
               <div className="bg-blue-50 rounded-xl border border-blue-100 p-5">
                 <h2 className="text-[10px] font-bold text-blue-600 uppercase mb-2">Facture {facture.numero}</h2>
                 <p className="text-sm text-blue-700">Total : {fmt(facture.montant_total)}</p>
                 <p className="text-sm text-blue-700">Réglé : {fmt(facture.montant_regle)}</p>
                 {facture.montant_dette > 0 && <p className="text-sm text-red-600 font-bold">Dette : {fmt(facture.montant_dette)}</p>}
+                {facture.echeance_dette && (
+                  <p className={`text-xs font-bold mt-1 ${new Date(facture.echeance_dette) < new Date() ? 'text-red-600' : 'text-amber-600'}`}>
+                    Échéance : {new Date(facture.echeance_dette).toLocaleDateString('fr-FR')}
+                  </p>
+                )}
                 <div className="flex gap-2 mt-3">
                   <button onClick={() => genererFacturePDF(facture, commande, commande.lignes_commande, { nom_interne: commande.clients?.nom_interne, ville: commande.clients?.ville, quartier: commande.clients?.quartier, telephone: commande.clients?.telephone, categorie: commande.clients?.categories_clients?.nom }, facture.reglements)}
                     className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700">
@@ -170,15 +187,22 @@ export default function DetailCommande({ Layout = CommLayout, backPath = '/comme
                   <div key={l.id} className="flex items-center justify-between py-2.5">
                     <div>
                       <p className="text-sm font-medium text-gray-700">{l.articles?.nom}</p>
-                      <p className="text-[10px] text-gray-400">{l.quantite} × {fmt(l.prix_unitaire)}</p>
+                      {facture ? (
+                        <p className="text-[10px] text-gray-400">{l.quantite} × {fmt(l.prix_unitaire)}</p>
+                      ) : (
+                        <p className="text-[10px] text-gray-400">Quantité : {l.quantite}</p>
+                      )}
                     </div>
-                    <p className="font-bold text-gray-800">{fmt(l.montant || l.quantite * l.prix_unitaire)}</p>
+                    {facture && <p className="font-bold text-gray-800">{fmt(l.montant || l.quantite * l.prix_unitaire)}</p>}
+                    {!facture && <p className="font-bold text-gray-800">× {l.quantite}</p>}
                   </div>
                 ))}
               </div>
-              <div className="border-t pt-3 mt-2 text-right">
-                <p className="text-xl font-black text-gray-800">{fmt(total)}</p>
-              </div>
+              {facture && (
+                <div className="border-t pt-3 mt-2 text-right">
+                  <p className="text-xl font-black text-gray-800">{fmt(total)}</p>
+                </div>
+              )}
             </div>
 
             {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-xl border border-red-100">{error}</div>}
@@ -328,6 +352,17 @@ export default function DetailCommande({ Layout = CommLayout, backPath = '/comme
                   <p className="text-xs text-amber-600 mt-1">Paiement partiel — validation DG requise.</p>
                 )}
               </div>
+
+              {/* Échéance de la dette (uniquement si partiel) */}
+              {typeReglement === 'partiel' && totalReglement > 0 && totalReglement < (facture.montant_total - facture.montant_regle) && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+                  <label className="block text-xs font-bold text-amber-700 uppercase mb-2">Date d'échéance de la dette *</label>
+                  <input type="date" value={echeance} onChange={e => setEcheance(e.target.value)}
+                    min={new Date().toISOString().slice(0, 10)}
+                    className="w-full border border-amber-300 rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-500/20 bg-white" />
+                  <p className="text-[10px] text-amber-600 mt-1">Le client s'engage à payer le reste ({fmt((facture.montant_total - facture.montant_regle) - totalReglement)}) avant cette date.</p>
+                </div>
+              )}
 
               <div className="flex gap-3">
                 <button onClick={() => { setShowRegler(false); setTypeReglement('') }} className="flex-1 py-2.5 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 font-medium">Annuler</button>

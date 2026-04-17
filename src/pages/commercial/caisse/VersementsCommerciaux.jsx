@@ -15,9 +15,10 @@ export default function VersementsCommerciaux() {
 
   const load = async () => {
     setLoading(true)
-    const { data } = await supabase.from('versements_commerciaux')
-      .select('*, profiles!commercial_id(nom, prenom), caisses(nom), profiles!valide_par(nom, prenom)')
+    const { data, error: err } = await supabase.from('versements_commerciaux')
+      .select('*')
       .order('created_at', { ascending: false })
+    if (err) console.error('versements error:', err)
     setVersements(data ?? [])
     setLoading(false)
   }
@@ -62,8 +63,8 @@ export default function VersementsCommerciaux() {
             <div key={v.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
               <div className="flex justify-between items-start mb-3">
                 <div>
-                  <p className="font-medium text-gray-800">{v.profiles?.prenom} {v.profiles?.nom}</p>
-                  <p className="text-xs text-gray-400">{v.caisses?.nom} · {new Date(v.created_at).toLocaleDateString('fr-FR')} {new Date(v.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+                  <p className="font-medium text-gray-800">Commercial</p>
+                  <p className="text-xs text-gray-400">{new Date(v.created_at).toLocaleDateString('fr-FR')} {new Date(v.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
                   {v.notes && <p className="text-xs text-gray-500 mt-1">{v.notes}</p>}
                 </div>
                 <div className="text-right">

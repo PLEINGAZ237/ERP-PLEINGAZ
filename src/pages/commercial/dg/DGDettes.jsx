@@ -19,14 +19,14 @@ export default function DGDettes() {
 
     // Factures en attente DG
     const { data: fac } = await supabase.from('factures')
-      .select('*, commandes(numero, clients(nom_interne, telephone, ville)), profiles!facture_par(nom, prenom)')
+      .select('*, commandes(numero, clients(nom_interne, telephone, ville)), profiles!facture_par(nom, prenom), reglements(mode, montant, created_at)')
       .eq('statut', 'EN_ATTENTE_DG')
       .order('created_at', { ascending: false })
     setFactures(fac ?? [])
 
     // Toutes les dettes validées non soldées
     const { data: dettes } = await supabase.from('factures')
-      .select('*, commandes(numero, clients(id, nom_interne, telephone, ville))')
+      .select('*, commandes(numero, clients(id, nom_interne, telephone, ville)), reglements(mode, montant, created_at)')
       .eq('statut', 'DETTE_VALIDEE')
       .order('created_at', { ascending: false })
 
@@ -91,12 +91,29 @@ export default function DGDettes() {
                         <p className="font-mono text-xs text-orange-600">{f.numero}</p>
                         <p className="font-bold text-gray-800">{f.commandes?.clients?.nom_interne}</p>
                         <p className="text-xs text-gray-400">{f.commandes?.clients?.ville} · {f.commandes?.clients?.telephone} · Commande {f.commandes?.numero}</p>
-                        <p className="text-xs text-gray-400">Facturé par {f.profiles?.prenom} {f.profiles?.nom} · {new Date(f.created_at).toLocaleDateString('fr-FR')}</p>
+                        <p className="text-xs text-gray-400">Facturé par {f.profiles?.prenom} {f.profiles?.nom} · {new Date(f.created_at).toLocaleDateString('fr-FR')} à {new Date(f.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+                        {f.reglements?.length > 0 && (
+                          <div className="mt-2 bg-gray-50 rounded-lg p-2 space-y-1">
+                            <p className="text-[10px] font-bold text-gray-400 uppercase">Paiements effectués</p>
+                            {f.reglements.map((r, i) => (
+                              <div key={i} className="flex justify-between text-xs">
+                                <span className="text-gray-600">{r.mode === 'cash' ? 'Cash' : r.mode === 'cheque' ? 'Chèque' : 'Banque'} · {new Date(r.created_at).toLocaleDateString('fr-FR')}</span>
+                                <span className="font-bold text-green-700">{fmt(r.montant)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       <div className="text-right">
                         <p className="text-xl font-bold text-red-600">{fmt(dette)}</p>
                         <p className="text-xs text-gray-400">sur {fmt(f.montant_total)}</p>
                         <p className="text-xs text-green-600">Réglé : {fmt(f.montant_regle)}</p>
+                        {f.echeance_dette && (
+                          <p className={`text-xs font-bold mt-1 ${new Date(f.echeance_dette) < new Date() ? 'text-red-600' : 'text-amber-600'}`}>
+                            Échéance : {new Date(f.echeance_dette).toLocaleDateString('fr-FR')}
+                            {new Date(f.echeance_dette) < new Date() && ' ⚠️ EXPIRÉE'}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="flex gap-2">
@@ -135,9 +152,16 @@ export default function DGDettes() {
                   </div>
                   <div className="bg-red-50 rounded-lg p-3">
                     {dc.factures.map(f => (
-                      <div key={f.id} className="flex justify-between text-xs py-1 border-b border-red-100 last:border-0">
-                        <span className="text-gray-600">{f.numero} · {new Date(f.created_at).toLocaleDateString('fr-FR')}</span>
-                        <span className="font-bold text-red-700">{fmt(f.montant_total - f.montant_regle)}</span>
+                      <div key={f.id} className="py-2 border-b border-red-100 last:border-0">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-gray-600">{f.numero} · {new Date(f.created_at).toLocaleDateString('fr-FR')}</span>
+                          <span className="font-bold text-red-700">{fmt(f.montant_total - f.montant_regle)}</span>
+                        </div>
+                        {f.reglements?.length > 0 && (
+                          <div className="mt-1 text-[10px] text-gray-500">
+                            Payé : {f.reglements.map(r => `${r.mode === 'cash' ? 'Cash' : r.mode === 'cheque' ? 'Chèque' : 'Banque'} ${fmt(r.montant)}`).join(' + ')}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

@@ -15,6 +15,8 @@ export default function CreerCommande({ Layout = CommLayout, backPath = '/commer
   const [articles, setArticles] = useState([])
   const [agences, setAgences] = useState([])
   const [searchClient, setSearchClient] = useState('')
+  const [filtreCategorie, setFiltreCategorie] = useState('')
+  const [filtreAgence, setFiltreAgence] = useState('')
   const [selectedClient, setSelectedClient] = useState(null)
   const [agenceId, setAgenceId] = useState('')
   const [lignes, setLignes] = useState([])
@@ -40,11 +42,19 @@ export default function CreerCommande({ Layout = CommLayout, backPath = '/commer
     load()
   }, [])
 
+  const categories = useMemo(() => [...new Set(clients.map(c => c.categories_clients?.nom).filter(Boolean))].sort(), [clients])
+  const agencesClient = useMemo(() => [...new Set(clients.map(c => c.agences?.nom).filter(Boolean))].sort(), [clients])
+
   const filteredClients = useMemo(() => {
-    if (!searchClient.trim()) return clients.slice(0, 20)
-    const q = searchClient.toLowerCase()
-    return clients.filter(c => c.nom_interne.toLowerCase().includes(q) || c.nom_responsable?.toLowerCase().includes(q) || c.ville?.toLowerCase().includes(q)).slice(0, 20)
-  }, [clients, searchClient])
+    let result = clients
+    if (filtreCategorie) result = result.filter(c => c.categories_clients?.nom === filtreCategorie)
+    if (filtreAgence) result = result.filter(c => c.agences?.nom === filtreAgence)
+    if (searchClient.trim()) {
+      const q = searchClient.toLowerCase()
+      result = result.filter(c => c.nom_interne.toLowerCase().includes(q) || c.nom_responsable?.toLowerCase().includes(q) || c.ville?.toLowerCase().includes(q))
+    }
+    return result.slice(0, 30)
+  }, [clients, searchClient, filtreCategorie, filtreAgence])
 
   const selectClient = async (client) => {
     setSelectedClient(client)
@@ -115,18 +125,41 @@ export default function CreerCommande({ Layout = CommLayout, backPath = '/commer
         {step === 1 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
             <h2 className="font-bold text-gray-700 text-sm uppercase tracking-wider mb-4">Sélectionner un client</h2>
-            <div className="relative mb-4">
+            <div className="relative mb-3">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input type="text" value={searchClient} onChange={e => setSearchClient(e.target.value)} placeholder="Rechercher par nom, responsable, ville..."
                 className="w-full pl-9 pr-3 py-3 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 outline-none" autoFocus />
             </div>
-            <div className="space-y-2 max-h-80 overflow-y-auto">
-              {filteredClients.map(c => (
+            <div className="flex flex-wrap gap-2 mb-4">
+              <select value={filtreCategorie} onChange={e => setFiltreCategorie(e.target.value)}
+                className="border border-gray-200 rounded-lg px-3 py-2 text-xs outline-none">
+                <option value="">Toutes catégories</option>
+                {categories.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <select value={filtreAgence} onChange={e => setFiltreAgence(e.target.value)}
+                className="border border-gray-200 rounded-lg px-3 py-2 text-xs outline-none">
+                <option value="">Toutes agences</option>
+                {agencesClient.map(a => <option key={a} value={a}>{a}</option>)}
+              </select>
+              <span className="text-xs text-gray-400 self-center">{filteredClients.length} client{filteredClients.length > 1 ? 's' : ''}</span>
+            </div>
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {filteredClients.length === 0 ? (
+                <p className="text-gray-400 text-sm text-center py-8">Aucun client trouvé. Essayez un autre filtre.</p>
+              ) : (
+                filteredClients.map(c => (
                 <div key={c.id} onClick={() => selectClient(c)} className="flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:border-blue-300 hover:bg-blue-50/30 cursor-pointer transition-all">
-                  <div><p className="font-medium text-gray-800 text-sm">{c.nom_interne}</p><p className="text-xs text-gray-400">{c.categories_clients?.nom} · {c.agences?.nom ?? '—'}</p></div>
-                  <span className="text-xs text-blue-500 font-bold">Choisir →</span>
+                  <div>
+                    <p className="font-medium text-gray-800 text-sm">{c.nom_interne}</p>
+                    <p className="text-xs text-gray-400">
+                      <span className="inline-block px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] font-medium mr-1">{c.categories_clients?.nom}</span>
+                      {c.agences?.nom ?? ''} {c.ville ? `· ${c.ville}` : ''}
+                    </p>
+                  </div>
+                  <span className="text-xs text-blue-500 font-bold shrink-0">Choisir →</span>
                 </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         )}
@@ -148,10 +181,9 @@ export default function CreerCommande({ Layout = CommLayout, backPath = '/commer
                       if (!ligne) return null
                       return (
                         <div key={art.id} className="flex items-center gap-3 px-3 py-2.5 bg-gray-50 rounded-lg">
-                          <div className="flex-1 min-w-0"><p className="text-sm font-medium text-gray-700">{ligne.nom}</p><p className="text-[10px] text-gray-400">{fmt(ligne.prix_unitaire)} / unité</p></div>
+                          <div className="flex-1 min-w-0"><p className="text-sm font-medium text-gray-700">{ligne.nom}</p></div>
                           <input type="number" min="0" value={ligne.quantite || ''} onChange={e => updateQty(art.id, e.target.value)} placeholder="Qté"
                             className="w-20 border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-center focus:ring-2 focus:ring-blue-500/20 outline-none" />
-                          <p className="text-sm font-bold text-gray-700 w-24 text-right">{fmt(ligne.quantite * ligne.prix_unitaire)}</p>
                         </div>
                       )
                     })}
@@ -159,7 +191,7 @@ export default function CreerCommande({ Layout = CommLayout, backPath = '/commer
                 </div>
               ))}
               <div className="border-t pt-4 mt-4 flex items-center justify-between">
-                <div><p className="text-xs text-gray-400">{lignesActives.length} article{lignesActives.length > 1 ? 's' : ''}</p><p className="text-xl font-bold text-gray-800">{fmt(total)}</p></div>
+                <div><p className="text-xs text-gray-400">{lignesActives.length} article{lignesActives.length > 1 ? 's' : ''}</p></div>
                 <button onClick={() => { if (lignesActives.length === 0) { setError('Ajoutez des quantités.'); return } setError(''); setStep(3) }}
                   className="px-6 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700">Continuer →</button>
               </div>
@@ -182,12 +214,12 @@ export default function CreerCommande({ Layout = CommLayout, backPath = '/commer
               <div className="divide-y divide-gray-100">
                 {lignesActives.map(l => (
                   <div key={l.article_id} className="flex items-center justify-between py-2.5">
-                    <div><p className="text-sm font-medium text-gray-700">{l.nom}</p><p className="text-[10px] text-gray-400">{l.quantite} × {fmt(l.prix_unitaire)}</p></div>
-                    <p className="font-bold text-gray-800">{fmt(l.quantite * l.prix_unitaire)}</p>
+                    <p className="text-sm font-medium text-gray-700">{l.nom}</p>
+                    <p className="font-bold text-gray-800">× {l.quantite}</p>
                   </div>
                 ))}
               </div>
-              <div className="border-t pt-4 mt-2 flex items-center justify-between"><p className="text-xs text-gray-400 uppercase font-bold">Total</p><p className="text-2xl font-black text-gray-800">{fmt(total)}</p></div>
+              <div className="border-t pt-4 mt-2 flex items-center justify-between"><p className="text-xs text-gray-400 uppercase font-bold">{lignesActives.length} article{lignesActives.length > 1 ? 's' : ''}</p></div>
             </div>
             {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-xl">{error}</div>}
             {success && <div className="p-3 bg-green-50 text-green-700 text-sm rounded-xl">{success}</div>}

@@ -1,7 +1,10 @@
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
-const fmt = (n) => n != null ? Number(n).toLocaleString('fr-FR') : '0'
+const fmt = (n) => {
+  if (n == null) return '0'
+  return Number(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+}
 
 const R = [200, 30, 30]     // Rouge INFOTECH
 const D = [35, 35, 35]      // Noir doux
@@ -396,4 +399,148 @@ export function genererBonSortiePDF(bl, facture, lignes, client, magasin) {
   doc.text('INFOTECH S.A. • Distribution GPL PLeingaz • Yaoundé', W / 2, fY + 4, { align: 'center' })
 
   doc.save('BS_' + (bl.numero ?? 'DRAFT') + '.pdf')
+}
+
+
+// ────────────────────────────────────────────────────────────
+// BORDEREAU DE ROUTE (sortie hors ville)
+// ────────────────────────────────────────────────────────────
+export function genererBordereauRoutePDF(sortie, lignes, vendeur, vehicule) {
+  const doc = new jsPDF({ format: 'a4' })
+  const W = 210, m = 15
+  let y = 15
+
+  // ── Bandeau haut rouge ──
+  doc.setFillColor(...R)
+  doc.rect(0, 0, W, 4, 'F')
+
+  // ── Nom société ──
+  doc.setFontSize(20)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...R)
+  doc.text('INFOTECH S.A.', m, y + 5)
+
+  doc.setFontSize(8)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(...G)
+  doc.text('Distribution GPL PLeingaz', m, y + 11)
+  doc.text('Yaoundé — Cameroun', m, y + 15)
+
+  // ── Titre ──
+  doc.setFontSize(16)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...D)
+  doc.text('BORDEREAU DE ROUTE', W - m, y + 5, { align: 'right' })
+
+  doc.setFontSize(10)
+  doc.setTextColor(...R)
+  doc.text(sortie.numero ?? '', W - m, y + 12, { align: 'right' })
+
+  y += 25
+
+  // ── Ligne séparatrice ──
+  doc.setDrawColor(...R)
+  doc.setLineWidth(0.5)
+  doc.line(m, y, W - m, y)
+  y += 8
+
+  // ── Infos sortie ──
+  const infos = [
+    ['Commercial', `${vendeur?.prenom ?? ''} ${vendeur?.nom ?? ''}`],
+    ['Véhicule', `${vehicule?.immatriculation ?? ''} ${vehicule?.nom ? '— ' + vehicule.nom : ''}`],
+    ['Destination', sortie.destination ?? '—'],
+    ['Durée prévue', `${sortie.duree_prevue ?? 1} jour(s)`],
+    ['Date départ', new Date(sortie.date_sortie ?? sortie.created_at).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })],
+    ['Frais de route', sortie.frais_route ? fmt(sortie.frais_route) + ' F CFA' : '—'],
+    ['Itinéraire', sortie.itineraires?.nom ?? '—'],
+  ]
+
+  doc.setFontSize(9)
+  infos.forEach(([label, value]) => {
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(...G)
+    doc.text(label + ' :', m, y)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(...D)
+    doc.text(value, m + 45, y)
+    y += 6
+  })
+
+  if (sortie.notes) {
+    y += 2
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(...G)
+    doc.text('Instructions :', m, y)
+    y += 5
+    doc.setFont('helvetica', 'italic')
+    doc.setTextColor(...D)
+    const splitNotes = doc.splitTextToSize(sortie.notes, W - 2 * m)
+    doc.text(splitNotes, m, y)
+    y += splitNotes.length * 4.5
+  }
+
+  y += 8
+
+  // ── Tableau articles chargés ──
+  doc.setFontSize(11)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...D)
+  doc.text('Articles chargés', m, y)
+  y += 3
+
+  const tableData = lignes.filter(l => l.quantite_sortie > 0).map(l => [
+    l.articles?.nom ?? l.nom ?? '—',
+    l.quantite_sortie.toString(),
+  ])
+
+  autoTable(doc, {
+    startY: y,
+    margin: { left: m, right: m },
+    head: [['Article', 'Quantité']],
+    body: tableData,
+    styles: { fontSize: 9, cellPadding: 3, textColor: D },
+    headStyles: { fillColor: R, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
+    alternateRowStyles: { fillColor: LG },
+    columnStyles: { 1: { halign: 'center', fontStyle: 'bold' } },
+  })
+
+  y = doc.lastAutoTable.finalY + 5
+  const totalUnites = lignes.filter(l => l.quantite_sortie > 0).reduce((s, l) => s + l.quantite_sortie, 0)
+
+  doc.setFillColor(...LG)
+  doc.roundedRect(m, y, W - 2 * m, 10, 2, 2, 'F')
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...D)
+  doc.text(`Total : ${lignes.filter(l => l.quantite_sortie > 0).length} article(s) — ${totalUnites} unité(s)`, m + 5, y + 6.5)
+
+  y += 20
+
+  // ── Signatures ──
+  doc.setFontSize(8)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(...G)
+
+  const sigW = (W - 3 * m) / 2
+  doc.text('Signature Chef d\'agence', m, y)
+  doc.setDrawColor(200, 200, 200)
+  doc.line(m, y + 2, m + sigW, y + 2)
+
+  doc.text('Signature Commercial', m + sigW + m, y)
+  doc.line(m + sigW + m, y + 2, W - m, y + 2)
+
+  y += 25
+  doc.text('Signature Magasinier (stock déchargé)', m, y)
+  doc.line(m, y + 2, m + sigW, y + 2)
+
+  doc.text('Date retour : ____/____/________', m + sigW + m, y)
+
+  // ── Pied de page ──
+  doc.setFillColor(...R)
+  doc.rect(0, 297 - 3, W, 3, 'F')
+  doc.setFontSize(6)
+  doc.setTextColor(...G)
+  doc.text('INFOTECH S.A. • Distribution GPL PLeingaz • Yaoundé — Document généré automatiquement', W / 2, 297 - 5, { align: 'center' })
+
+  doc.save('Bordereau_Route_' + (sortie.numero ?? 'DRAFT') + '.pdf')
 }

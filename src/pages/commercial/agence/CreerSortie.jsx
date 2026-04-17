@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import { genererBordereauRoutePDF } from '@/lib/generatePDF'
 import RespAgenceLayout from '@/components/commercial/RespAgenceLayout'
 import { ArrowLeft, Loader2, Truck } from 'lucide-react'
 
@@ -22,6 +23,7 @@ export default function CreerSortie() {
 
   const [form, setForm] = useState({
     vehicule_id: '', vendeur_id: '', itineraire_id: '', magasin_source_id: '', hors_ville: false,
+    destination: '', duree_prevue: 1, frais_route: '', notes: '',
   })
   const [lignes, setLignes] = useState([])
 
@@ -54,6 +56,7 @@ export default function CreerSortie() {
     if (!form.vehicule_id) { setError('Sélectionnez un véhicule.'); return }
     if (!form.vendeur_id) { setError('Sélectionnez un vendeur.'); return }
     if (!form.magasin_source_id) { setError('Sélectionnez un magasin source.'); return }
+    if (form.hors_ville && !form.destination) { setError('Saisissez la destination pour une sortie hors ville.'); return }
     if (lignesActives.length === 0) { setError('Ajoutez au moins un article.'); return }
 
     setSaving(true)
@@ -65,12 +68,48 @@ export default function CreerSortie() {
       p_magasin_source_id: form.magasin_source_id,
       p_hors_ville: form.hors_ville,
       p_lignes: lignesActives.map(l => ({ article_id: l.article_id, quantite: l.quantite })),
+      p_destination: form.hors_ville ? form.destination || null : null,
+      p_duree_prevue: form.hors_ville ? Number(form.duree_prevue) || 1 : 1,
+      p_frais_route: form.hors_ville ? Number(form.frais_route) || 0 : 0,
+      p_notes: form.notes || null,
     })
 
     if (errSv) { setSaving(false); setError(errSv.message); return }
 
+    // Notifier le vendeur
+    await supabase.from('notifications').insert({
+      destinataire_id: form.vendeur_id,
+      titre: 'Sortie véhicule assignée',
+      message: `Sortie ${data.numero} — ${form.hors_ville ? 'Hors ville → ' + form.destination : 'En ville'}. Véhicule chargé.`,
+      type: 'info',
+      module: 'commercial',
+      lien: '/commercial/vente',
+    })
+
+    // Générer le bordereau de route si hors ville
+    if (form.hors_ville) {
+      const vendeur = vendeurs.find(v => v.id === form.vendeur_id)
+      const vehicule = vehicules.find(v => v.id === form.vehicule_id)
+      const sortieData = {
+        numero: data.numero,
+        destination: form.destination,
+        duree_prevue: form.duree_prevue,
+        frais_route: form.frais_route,
+        notes: form.notes,
+        hors_ville: true,
+        created_at: new Date().toISOString(),
+        itineraires: itineraires.find(i => i.id === form.itineraire_id),
+      }
+      const lignesPDF = lignesActives.map(l => ({
+        articles: { nom: l.nom },
+        nom: l.nom,
+        quantite_sortie: l.quantite,
+      }))
+      genererBordereauRoutePDF(sortieData, lignesPDF, vendeur, vehicule)
+    }
+
     setSaving(false)
-    setSuccess(`Sortie ${data.numero} créée !`)
+    setSuccess(`Sortie ${data.numero} créée !${form.hors_ville ? ' Bordereau de route téléchargé.' : ''} Le commercial a été notifié.`)
     setTimeout(() => navigate('/commercial/agence/sorties'), 2000)
   }
 
@@ -127,6 +166,35 @@ export default function CreerSortie() {
             <input type="checkbox" checked={form.hors_ville} onChange={e => setForm({ ...form, hors_ville: e.target.checked })} className="w-4 h-4 accent-teal-600" />
             <span className="text-sm text-gray-600">Sortie hors ville (bordereau de route)</span>
           </label>
+
+          {form.hors_ville && (
+            <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-3">
+              <p className="text-xs font-bold text-amber-700 uppercase">Détails hors ville</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Destination *</label>
+                  <input type="text" value={form.destination} onChange={e => setForm({ ...form, destination: e.target.value })}
+                    placeholder="Ex: Bafoussam" className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-500/20" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Durée (jours)</label>
+                  <input type="number" min="1" max="30" value={form.duree_prevue} onChange={e => setForm({ ...form, duree_prevue: e.target.value })}
+                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-500/20" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Frais de route (F)</label>
+                  <input type="number" min="0" value={form.frais_route} onChange={e => setForm({ ...form, frais_route: e.target.value })}
+                    placeholder="0" className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-500/20" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Notes / Instructions</label>
+                <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })}
+                  placeholder="Instructions particulières..." rows={2}
+                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-500/20 resize-none" />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-5">

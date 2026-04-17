@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import CaisseLayout from '@/components/commercial/CaisseLayout'
-import UploadJustificatif from '@/components/UploadJustificatif'
 import { Loader2, Plus, ArrowDownToLine, ArrowUpFromLine, Landmark, ArrowRightLeft, Lock, Unlock } from 'lucide-react'
 
 const fmt = (n) => n != null ? Number(n).toLocaleString('fr-FR') + ' F' : '—'
@@ -54,18 +53,22 @@ export default function GestionCaisse() {
   }, [selectedCaisse])
 
   const loadJournee = async () => {
-    const { data: jc } = await supabase
+    // Chercher la dernière journée ouverte ou clôturée
+    const { data: jc, error: jcErr } = await supabase
       .from('journees_caisse')
       .select('*')
       .eq('caisse_id', selectedCaisse)
-      .eq('date_journee', new Date().toISOString().slice(0, 10))
+      .in('statut', ['OUVERTE', 'CLOTUREE', 'VALIDEE'])
+      .order('date_journee', { ascending: false })
+      .limit(1)
       .maybeSingle()
+    if (jcErr) console.error('journee caisse error:', jcErr)
     setJournee(jc)
 
     if (jc) {
       const { data: mvts } = await supabase
         .from('mouvements_caisse')
-        .select('*, profiles!effectue_par(nom, prenom), banques(nom)')
+        .select('*')
         .eq('journee_caisse_id', jc.id)
         .order('created_at', { ascending: false })
       setMouvements(mvts ?? [])
@@ -217,15 +220,12 @@ export default function GestionCaisse() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-gray-700">{TYPE_LABELS[m.type]}</p>
-                        <p className="text-xs text-gray-400">{m.description ?? '—'} · {m.profiles?.prenom} {m.profiles?.nom} · {new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+                        <p className="text-xs text-gray-400">{m.description ?? '—'} · {new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
                       </div>
                       <p className={`font-bold ${['encaissement', 'transfert_in'].includes(m.type) ? 'text-green-600' : 'text-red-600'}`}>
                         {['encaissement', 'transfert_in'].includes(m.type) ? '+' : '-'}{fmt(m.montant)}
                       </p>
                     </div>
-                    {m.type === 'versement_banque' && (
-                      <UploadJustificatif tableRef="mouvements_caisse" enregistrementId={m.id} />
-                    )}
                   </div>
                 ))}
               </div>
